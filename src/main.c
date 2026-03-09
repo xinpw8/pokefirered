@@ -88,7 +88,12 @@ void EnableVCountIntrAtLine150(void);
 
 void AgbMain()
 {
-#if MODERN
+#if HOST_NATIVE
+    // On native host, IWRAM is mmap'd and zeroed by the OS.
+    // RegisterRamReset is a no-op (handled by host_bios.c).
+    RegisterRamReset(RESET_ALL & ~RESET_IWRAM);
+    memset((void *)0x03000000, 0, 0x7E00);
+#elif MODERN
     // Modern compilers are liberal with the stack on entry to this function,
     // so RegisterRamReset may crash if it resets IWRAM.
     RegisterRamReset(RESET_ALL & ~RESET_IWRAM);

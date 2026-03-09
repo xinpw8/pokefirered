@@ -69,6 +69,17 @@ void MPlayFadeOut(struct MusicPlayerInfo *mplayInfo, u16 speed)
 
 void m4aSoundInit(void)
 {
+#if HOST_NATIVE
+    /* On native, delegate to HostNativeSoundInit which handles all the
+     * platform-specific issues:
+     *   - SoundInit contains VCount spin-waits that hang on native
+     *   - m4aSoundMode calls DMA register manipulation via m4aSoundVSyncOff
+     *   - NUM_MUSIC_PLAYERS is (u16)gNumMusicPlayers which gives a garbage
+     *     address-as-value on 64-bit (GBA linker trick)
+     */
+    extern void HostNativeSoundInit(void);
+    HostNativeSoundInit();
+#else
     s32 i;
 
     CpuCopy32((void *)((s32)SoundMainRAM & ~1), SoundMainRAM_Buffer, sizeof(SoundMainRAM_Buffer));
@@ -97,6 +108,7 @@ void m4aSoundInit(void)
         MPlayOpen(mplayInfo, track, 2);
         track->chan = 0;
     }
+#endif
 }
 
 void m4aSoundMain(void)
@@ -111,7 +123,8 @@ void m4aSongNumStart(u16 n)
     const struct Song *song = &songTable[n];
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
 
-    MPlayStart(mplay->info, song->header);
+    if (song->header != NULL)
+        MPlayStart(mplay->info, song->header);
 }
 
 void m4aSongNumStartOrChange(u16 n)
@@ -120,6 +133,9 @@ void m4aSongNumStartOrChange(u16 n)
     const struct Song *songTable = gSongTable;
     const struct Song *song = &songTable[n];
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
+
+    if (song->header == NULL)
+        return;
 
     if (mplay->info->songHeader != song->header)
     {
@@ -327,7 +343,13 @@ void MPlayExtender(struct CgbChannel *cgbChans)
 
 void MusicPlayerJumpTableCopy(void)
 {
+#if HOST_NATIVE
+    /* swi 0x2A is SoundBiasReset — calibrates GBA DAC hardware.
+     * No equivalent on native; the function name is misleading (the
+     * original GBA BIOS repurposes this slot). */
+#else
     asm("swi 0x2A");
+#endif
 }
 
 void ClearChain(void *x)

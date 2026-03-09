@@ -392,6 +392,14 @@ static int MultiBootHandShake(struct MultiBootParam *mp)
 
 static NOINLINE void MultiBootWaitCycles(u32 cycles)
 {
+#if HOST_NATIVE
+    /* The GBA version inspects PC to determine memory region (EWRAM/ROM/BIOS)
+     * and picks a cycle divisor (12/13/4) to busy-wait the right duration.
+     * On native, cycle-accurate timing is unnecessary. */
+    volatile u32 i;
+    for (i = 0; i < cycles; i++)
+        ;
+#else
     asm("mov r2, pc");
     asm("lsr r2, #24");
     asm("mov r1, #12");
@@ -405,6 +413,7 @@ static NOINLINE void MultiBootWaitCycles(u32 cycles)
     asm("MultiBootWaitCyclesLoop:");
     asm("sub r0, r1");
     asm("bgt MultiBootWaitCyclesLoop");
+#endif
 }
 
 static void MultiBootWaitSendDone(void)
