@@ -281,6 +281,19 @@ void ResetLinkRfuGFLayer(void)
 
 void InitRFU(void)
 {
+#if HOST_NATIVE
+    /* No wireless adapter on native.  Skip rfu_REQ_stopMode / rfu_waitREQComplete
+     * which spin waiting for hardware that doesn't exist.  Just preserve the
+     * existing serial/timer interrupt handlers. */
+    IntrFunc serialIntr = gIntrTable[1];
+    IntrFunc timerIntr = gIntrTable[2];
+    InitRFUAPI();
+    /* Skip rfu_REQ_stopMode / rfu_waitREQComplete — no wireless hardware */
+    REG_IME = 0;
+    gIntrTable[1] = serialIntr;
+    gIntrTable[2] = timerIntr;
+    REG_IME = INTR_FLAG_VBLANK;
+#else
     IntrFunc serialIntr = gIntrTable[1];
     IntrFunc timerIntr = gIntrTable[2];
     InitRFUAPI();
@@ -290,10 +303,54 @@ void InitRFU(void)
     gIntrTable[1] = serialIntr;
     gIntrTable[2] = timerIntr;
     REG_IME = INTR_FLAG_VBLANK;
+#endif
 }
+
+#if HOST_NATIVE
+/* On 64-bit native, the RFU structures are larger than on GBA (8-byte pointers
+ * vs 4-byte).  The hardcoded offsets in rfu_initializeAPI assume 32-bit layout,
+ * causing buffer overflow into adjacent BSS.  Allocate structures separately. */
+static struct RfuLinkStatus sHostRfuLinkStatus;
+static struct RfuStatic sHostRfuStatic;
+static struct RfuFixed sHostRfuFixed;
+static struct RfuSlotStatusNI sHostRfuSlotNI[RFU_CHILD_MAX];
+static struct RfuSlotStatusUNI sHostRfuSlotUNI[RFU_CHILD_MAX];
+static struct RfuIntrStruct sHostRfuIntrStruct;
+#endif
 
 void InitRFUAPI(void)
 {
+#if HOST_NATIVE
+    u16 i;
+    /* Point globals at static storage instead of the undersized sRfuAPIBuffer */
+    memset(&sHostRfuLinkStatus, 0, sizeof(sHostRfuLinkStatus));
+    memset(&sHostRfuStatic, 0, sizeof(sHostRfuStatic));
+    memset(&sHostRfuFixed, 0, sizeof(sHostRfuFixed));
+    memset(sHostRfuSlotNI, 0, sizeof(sHostRfuSlotNI));
+    memset(sHostRfuSlotUNI, 0, sizeof(sHostRfuSlotUNI));
+    memset(&sHostRfuIntrStruct, 0, sizeof(sHostRfuIntrStruct));
+    gRfuLinkStatus = &sHostRfuLinkStatus;
+    gRfuStatic = &sHostRfuStatic;
+    gRfuFixed = &sHostRfuFixed;
+    for (i = 0; i < RFU_CHILD_MAX; i++) {
+        gRfuSlotStatusNI[i] = &sHostRfuSlotNI[i];
+        gRfuSlotStatusUNI[i] = &sHostRfuSlotUNI[i];
+    }
+    gRfuFixed->STWIBuffer = &sHostRfuIntrStruct;
+    /* Initialize STWI status without copying ARM code */
+    STWI_init_all(&sHostRfuIntrStruct, &gIntrTable[1], TRUE);
+    /* rfu_STC_clearAPIVariables is static in librfu_rfu.c; our memset above
+     * already zeroed everything it would clear. */
+    for (i = 0; i < RFU_CHILD_MAX; i++) {
+        gRfuSlotStatusNI[i]->recvBuffer = NULL;
+        gRfuSlotStatusNI[i]->recvBufferSize = 0;
+        gRfuSlotStatusUNI[i]->recvBuffer = NULL;
+        gRfuSlotStatusUNI[i]->recvBufferSize = 0;
+    }
+    gLinkType = 0;
+    RfuSetIgnoreError(FALSE);
+    ResetLinkRfuGFLayer();
+#else
     if (!rfu_initializeAPI(sRfuAPIBuffer, RFU_API_BUFF_SIZE_RAM, &gIntrTable[1], TRUE))
     {
         gLinkType = 0;
@@ -302,6 +359,7 @@ void InitRFUAPI(void)
         ResetLinkRfuGFLayer();
         rfu_setTimerInterrupt(3, &gIntrTable[2]);
     }
+#endif
 }
 
 static void Task_ParentSearchForChildren(u8 taskId)

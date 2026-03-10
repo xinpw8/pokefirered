@@ -86,7 +86,7 @@ u8 *StringCopy_PlayerName(u8 *dest, const u8 *src)
 
 u8 *StringCopy(u8 *dest, const u8 *src)
 {
-    while (*src != EOS)
+    while (*src != EOS && *src != '\0')
     {
         *dest = *src;
         dest++;
@@ -99,7 +99,7 @@ u8 *StringCopy(u8 *dest, const u8 *src)
 
 u8 *StringAppend(u8 *dest, const u8 *src)
 {
-    while (*dest != EOS)
+    while (*dest != EOS && *dest != '\0')
         dest++;
 
     return StringCopy(dest, src);
@@ -117,7 +117,7 @@ u8 *StringCopyN(u8 *dest, const u8 *src, u8 n)
 
 u8 *StringAppendN(u8 *dest, const u8 *src, u8 n)
 {
-    while (*dest != EOS)
+    while (*dest != EOS && *dest != '\0')
         dest++;
 
     return StringCopyN(dest, src, n);
@@ -127,7 +127,7 @@ u16 StringLength(const u8 *str)
 {
     u16 length = 0;
 
-    while (str[length] != EOS)
+    while (str[length] != EOS && str[length] != '\0')
         length++;
 
     return length;
@@ -137,7 +137,7 @@ s32 StringCompare(const u8 *str1, const u8 *str2)
 {
     while (*str1 == *str2)
     {
-        if (*str1 == EOS)
+        if (*str1 == EOS || *str1 == '\0')
             return 0;
         str1++;
         str2++;
@@ -150,7 +150,7 @@ s32 StringCompareN(const u8 *str1, const u8 *str2, u32 n)
 {
     while (*str1 == *str2)
     {
-        if (*str1 == EOS)
+        if (*str1 == EOS || *str1 == '\0')
             return 0;
         str1++;
         str2++;
@@ -506,7 +506,7 @@ u8 *StringFill(u8 *dest, u8 c, u16 n)
 
 u8 *StringCopyPadded(u8 *dest, const u8 *src, u8 c, u16 n)
 {
-    while (*src != EOS)
+    while (*src != EOS && *src != '\0')
     {
         *dest++ = *src++;
 
@@ -537,7 +537,7 @@ u8 *StringCopyN_Multibyte(u8 *dest, const u8 *src, u32 n)
 
     for (i = n - 1; i != -1u; i--)
     {
-        if (*src == EOS)
+        if (*src == EOS || *src == '\0')
         {
             break;
         }
@@ -557,7 +557,7 @@ u32 StringLength_Multibyte(const u8 *str)
 {
     u32 length = 0;
 
-    while (*str != EOS)
+    while (*str != EOS && *str != '\0')
     {
         if (*str == 0xF9)
             str++;

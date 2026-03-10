@@ -1,6 +1,7 @@
 #include "global.h"
 #include "gflib.h"
 #include "data.h"
+#include <stdio.h>
 #include "keyboard_text.h"
 #include "event_data.h"
 #include "event_object_movement.h"
@@ -557,6 +558,15 @@ static void CreateNamingScreenTask(void)
 
 static void Task_NamingScreen(u8 taskId)
 {
+#ifdef PFR_DIAG
+    {
+        static u8 sDiagLastState = (u8)-1;
+        if (sNamingScreen->state != sDiagLastState) {
+            sDiagLastState = sNamingScreen->state;
+            fprintf(stderr, "[PFR_DIAG] Task_NamingScreen: state=%d\n", sNamingScreen->state);
+        }
+    }
+#endif
     switch (sNamingScreen->state)
     {
     case STATE_FADE_IN:
@@ -628,6 +638,12 @@ static u8 CurrentPageToNextKeyboardId(void)
 
 static u8 CurrentPageToKeyboardId(void)
 {
+    if (sNamingScreen->currentPage >= KBPAGE_COUNT)
+    {
+        fprintf(stderr, "[NS-BUG] currentPage=%u >= KBPAGE_COUNT=%u\n",
+                sNamingScreen->currentPage, KBPAGE_COUNT);
+        return sPageToKeyboardId[0];
+    }
     return sPageToKeyboardId[sNamingScreen->currentPage];
 }
 
@@ -1029,6 +1045,12 @@ static void StartButtonFlash(struct Task *task, u8 button, u8 keepFlashing)
 
 static void SpriteCB_Cursor(struct Sprite *sprite)
 {
+    // After MainState_Exit frees sNamingScreen, the sprite callback may still
+    // fire for one frame. On GBA, NULL dereference reads BIOS; on native it
+    // segfaults.  Guard against this.
+    if (sNamingScreen == NULL)
+        return;
+
     if (sprite->animEnded)
         StartSpriteAnim(sprite, 0);
 
@@ -1073,6 +1095,9 @@ static void SpriteCB_InputArrow(struct Sprite *sprite)
 {
     const s16 x[] = {0, -4, -2, -1};
 
+    if (sNamingScreen == NULL)
+        return;
+
     if (sprite->sDelay == 0 || --sprite->sDelay == 0)
     {
         sprite->sDelay = 8;
@@ -1091,7 +1116,12 @@ static void SpriteCB_InputArrow(struct Sprite *sprite)
 static void SpriteCB_Underscore(struct Sprite *sprite)
 {
     const s16 y[] = {2, 3, 2, 1};
-    u8 pos = GetTextEntryPosition();
+    u8 pos;
+
+    if (sNamingScreen == NULL)
+        return;
+
+    pos = GetTextEntryPosition();
 
     if (pos != (u8)sprite->sId)
     {
@@ -1262,6 +1292,8 @@ static bool8 (*const sPageSwapSpriteFuncs[])(struct Sprite *sprite) =
 
 static void SpriteCB_PageSwap(struct Sprite *sprite)
 {
+    if (sNamingScreen == NULL)
+        return;
     while (sPageSwapSpriteFuncs[sprite->sState](sprite))
         ;
 }
@@ -2012,6 +2044,8 @@ static void VBlankCB_NamingScreen(void)
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
+    if (sNamingScreen == NULL)
+        return;
     SetGpuReg(REG_OFFSET_BG1VOFS, sNamingScreen->bg1vOffset);
     SetGpuReg(REG_OFFSET_BG2VOFS, sNamingScreen->bg2vOffset);
     SetGpuReg(REG_OFFSET_BG1CNT, GetGpuReg(REG_OFFSET_BG1CNT) & 0xFFFC); // clear priority bits
@@ -2033,7 +2067,7 @@ static bool8 IsWideLetter(u8 character)
 {
     u8 i;
 
-    for (i = 0; gText_AlphabetUpperLower[i] != EOS; i++)
+    for (i = 0; gText_AlphabetUpperLower[i] != EOS && gText_AlphabetUpperLower[i] != '\0'; i++)
     {
         if (character == gText_AlphabetUpperLower[i])
             return TRUE;

@@ -1,4 +1,7 @@
 #include "librfu.h"
+#if HOST_NATIVE
+#include <stdio.h>
+#endif
 
 static void Sio32IDIntr(void);
 static void Sio32IDInit(void);
@@ -43,8 +46,22 @@ s32 AgbRFU_checkID(u8 maxTries)
         regTMCNTL[1] = 0;
         regTMCNTL[0] = 0;
         regTMCNTL[1] = TIMER_1024CLK | TIMER_ENABLE;
+#if HOST_NATIVE
+        {
+            u32 timeout = 0;
+            while (regTMCNTL[0] < 32)
+            {
+                if (++timeout > 1000000)
+                {
+                    fprintf(stderr, "pfr_play: AgbRFU_checkID timeout (timer stuck)\n");
+                    break;
+                }
+            }
+        }
+#else
         while (regTMCNTL[0] < 32)
             ;
+#endif
         regTMCNTL[1] = 0;
         regTMCNTL[0] = 0;
     }

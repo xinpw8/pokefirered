@@ -1,4 +1,7 @@
 #include "librfu.h"
+#if HOST_NATIVE
+#include <stdio.h>
+#endif
 
 static void STWI_intr_timer(void);
 static u16 STWI_init(u8 request);
@@ -12,6 +15,14 @@ COMMON_DATA struct STWIStatus *gSTWIStatus = NULL;
 
 void STWI_init_all(struct RfuIntrStruct *interruptStruct, IntrFunc *interrupt, bool8 copyInterruptToRam)
 {
+#if HOST_NATIVE
+    /* On native (aarch64), skip copying ARM machine code to RAM and
+     * installing it as the serial interrupt handler — executing GBA ARM
+     * code on the host CPU would crash immediately. Just set up the data
+     * structures so the rest of the RFU API doesn't dereference NULL. */
+    (void)copyInterruptToRam;
+    gSTWIStatus = &interruptStruct->block2;
+#else
     // If we're copying our interrupt into RAM, DMA it to block1 and use
     // block2 for our STWIStatus, otherwise block1 holds the STWIStatus.
     // interrupt usually is a pointer to gIntrTable[1]
@@ -26,6 +37,7 @@ void STWI_init_all(struct RfuIntrStruct *interruptStruct, IntrFunc *interrupt, b
         *interrupt = IntrSIO32;
         gSTWIStatus = (struct STWIStatus *)interruptStruct->block1;
     }
+#endif
     gSTWIStatus->rxPacket = &interruptStruct->rxPacketAlloc;
     gSTWIStatus->txPacket = &interruptStruct->txPacketAlloc;
     gSTWIStatus->msMode = AGB_CLK_MASTER;
@@ -40,7 +52,7 @@ void STWI_init_all(struct RfuIntrStruct *interruptStruct, IntrFunc *interrupt, b
     gSTWIStatus->error = 0;
     gSTWIStatus->recoveryCount = 0;
     gSTWIStatus->sending = 0;
-    REG_RCNT = 0x100; // TODO: mystery bit? 
+    REG_RCNT = 0x100; // TODO: mystery bit?
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
     STWI_init_Callback_M();
     STWI_init_Callback_S();
@@ -49,7 +61,12 @@ void STWI_init_all(struct RfuIntrStruct *interruptStruct, IntrFunc *interrupt, b
 
 void STWI_init_timer(IntrFunc *interrupt, s32 timerSelect)
 {
+#if HOST_NATIVE
+    /* Don't install ARM timer interrupt handler on native */
+    (void)interrupt;
+#else
     *interrupt = STWI_intr_timer;
+#endif
     gSTWIStatus->timerSelect = timerSelect;
     IntrEnable(INTR_FLAG_TIMER0 << gSTWIStatus->timerSelect);
 }
@@ -66,8 +83,23 @@ void AgbRFU_SoftReset(void)
     *timerH = 0;
     *timerL = 0;
     *timerH = TIMER_ENABLE | TIMER_1024CLK;
+#if HOST_NATIVE
+    {
+        u32 timeout = 0;
+        while (*timerL <= 0x11)
+        {
+            REG_RCNT = 0x80A2;
+            if (++timeout > 1000000)
+            {
+                fprintf(stderr, "pfr_play: AgbRFU_SoftReset timeout (timer stuck)\n");
+                break;
+            }
+        }
+    }
+#else
     while (*timerL <= 0x11)
         REG_RCNT = 0x80A2;
+#endif
     *timerH = 3;
     REG_RCNT = 0x80A0;
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
@@ -136,8 +168,23 @@ void STWI_set_Callback_ID(void (*func)(void)) // name in SDK, but is actually se
 
 u16 STWI_poll_CommandEnd(void)
 {
+#if HOST_NATIVE
+    {
+        u32 timeout = 0;
+        while (gSTWIStatus->sending == 1)
+        {
+            if (++timeout > 1000000)
+            {
+                fprintf(stderr, "pfr_play: STWI_poll_CommandEnd timeout (sending stuck)\n");
+                gSTWIStatus->sending = 0;
+                break;
+            }
+        }
+    }
+#else
     while (gSTWIStatus->sending == 1)
         ;
+#endif
     return gSTWIStatus->error;
 }
 

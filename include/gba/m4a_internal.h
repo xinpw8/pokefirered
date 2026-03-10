@@ -65,6 +65,12 @@ struct ToneData
     u8 decay;
     u8 sustain;
     u8 release;
+#if HOST_NATIVE
+    // On 64-bit: keysplit (type & 0x40) stores the keySplitTable pointer
+    // here instead of packing it into the attack/decay/sustain/release bytes,
+    // which are only 4 bytes and can't hold an 8-byte pointer.
+    const u8 *keySplitTable;
+#endif
 };
 
 #define SOUND_CHANNEL_SF_START       0x80
@@ -401,13 +407,22 @@ extern const u8 gNoiseTable[];
 
 extern const struct PokemonCrySong gPokemonCrySongTemplate;
 
+#if HOST_NATIVE
+extern struct ToneData voicegroup000[];
+#else
 extern const struct ToneData voicegroup000;
+#endif
 
+#if HOST_NATIVE
+/* On native, these are actual constants — not linker-defined address hacks. */
+#define NUM_MUSIC_PLAYERS 4
+#define MAX_LINES 0
+#else
 extern char gNumMusicPlayers[];
 extern char gMaxLines[];
-
 #define NUM_MUSIC_PLAYERS ((u16)gNumMusicPlayers)
 #define MAX_LINES ((u32)gMaxLines)
+#endif
 
 u32 umul3232H32(u32 multiplier, u32 multiplicand);
 void SoundMain(void);

@@ -442,6 +442,11 @@ static u8 CopySaveSlotData(u16 sectorId, const struct SaveSectorLocation *locati
         if (id == 0)
             gLastWrittenSector = i;
 
+#if HOST_NATIVE
+        /* Guard against erased flash (all 0xFF) producing out-of-bounds id */
+        if (id >= NUM_SECTORS_PER_SLOT)
+            continue;
+#endif
         checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[id].size);
         if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE && gSaveDataBufferPtr->checksum == checksum)
         {
@@ -472,7 +477,11 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(sector, gSaveDataBufferPtr);
-        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
+        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE
+#if HOST_NATIVE
+            && gSaveDataBufferPtr->id < NUM_SECTORS_PER_SLOT
+#endif
+        )
         {
             signatureValid = TRUE;
             checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);
@@ -500,7 +509,11 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(NUM_SECTORS_PER_SLOT + sector, gSaveDataBufferPtr);
-        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
+        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE
+#if HOST_NATIVE
+            && gSaveDataBufferPtr->id < NUM_SECTORS_PER_SLOT
+#endif
+        )
         {
             signatureValid = TRUE;
             checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);

@@ -1,5 +1,8 @@
 #include "global.h"
 #include "dma3.h"
+#ifdef PFR_DIAG
+#include <stdio.h>
+#endif
 
 #define MAX_DMA_REQUESTS 128
 
@@ -37,6 +40,21 @@ void ProcessDma3Requests(void)
 
     if (gDma3ManagerLocked)
         return;
+
+#ifdef PFR_DIAG
+    {
+        static u32 sDiagCallCount = 0;
+        u32 pendingCount = 0;
+        int j;
+        for (j = 0; j < MAX_DMA_REQUESTS; j++)
+            if (gDma3Requests[j].size != 0)
+                pendingCount++;
+        if (pendingCount > 0 && (sDiagCallCount % 60 == 0))
+            fprintf(stderr, "[PFR_DIAG] ProcessDma3Requests: pending=%u cursor=%u vcount=%u\n",
+                    pendingCount, gDma3RequestCursor, *(u8 *)REG_ADDR_VCOUNT);
+        sDiagCallCount++;
+    }
+#endif
 
     bytesTransferred = 0;
 

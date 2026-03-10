@@ -1565,6 +1565,12 @@ void ply_xxx(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
 
 void ply_xwave(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
 {
+#if HOST_NATIVE
+    /* XWAVE embeds a 4-byte pointer to WaveData, which can't hold a 64-bit
+     * address.  Not used in any FireRed song data.  Skip the 4 bytes safely. */
+    (void)mplayInfo;
+    track->cmdPtr += 4;
+#else
     u32 wav;
 
 #ifdef UBFIX
@@ -1578,6 +1584,7 @@ void ply_xwave(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track
 
     track->tone.wav = (struct WaveData *)wav;
     track->cmdPtr += 4;
+#endif
 }
 
 void ply_xtype(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
@@ -1711,7 +1718,12 @@ start_song:
     gPokemonCrySongs[i].tone = tone;
     gPokemonCrySongs[i].part[0] = &gPokemonCrySongs[i].part0;
     gPokemonCrySongs[i].part[1] = &gPokemonCrySongs[i].part1;
+#if HOST_NATIVE
+    // TrackReadPointer uses self-relative offsets: target = &field + *(s32*)field
+    gPokemonCrySongs[i].gotoTarget = (u32)((u8 *)&gPokemonCrySongs[i].cont - (u8 *)&gPokemonCrySongs[i].gotoTarget);
+#else
     gPokemonCrySongs[i].gotoTarget = (u32)&gPokemonCrySongs[i].cont;
+#endif
 
     mplayInfo->ident = ID_NUMBER;
 

@@ -3,6 +3,9 @@
 #include "util.h"
 #include "decompress.h"
 #include "task.h"
+#ifdef PFR_DIAG
+#include <stdio.h>
+#endif
 
 enum
 {
@@ -114,6 +117,17 @@ u8 UpdatePaletteFade(void)
 {
     u8 result;
     u8 dummy = 0;
+
+#ifdef PFR_DIAG
+    if (gPaletteFade.active) {
+        static u32 sDiagPalFadeCount = 0;
+        if (sDiagPalFadeCount % 30 == 0)
+            fprintf(stderr, "[PFR_DIAG] UpdatePaletteFade: active=%d pending=%u y=%d targetY=%d mode=%d\n",
+                    gPaletteFade.active, sPlttBufferTransferPending,
+                    gPaletteFade.y, gPaletteFade.targetY, gPaletteFade.mode);
+        sDiagPalFadeCount++;
+    }
+#endif
 
     if (sPlttBufferTransferPending)
         return PALETTE_FADE_STATUS_LOADING;

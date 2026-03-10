@@ -1,5 +1,8 @@
 #include "global.h"
 #include "gflib.h"
+#ifdef PFR_DIAG
+#include <stdio.h>
+#endif
 
 COMMON_DATA u8 gWindowClearTile = {0};
 COMMON_DATA void *gWindowBgTilemapBuffers[4] = {0};
@@ -243,6 +246,15 @@ void CopyWindowToVram(u8 windowId, u8 mode)
 void PutWindowTilemap(u8 windowId)
 {
     struct Window windowLocal = gWindows[windowId];
+
+#ifdef PFR_DIAG
+    fprintf(stderr, "[PFR_DIAG] PutWindowTilemap: winId=%d bg=%d baseTile=%d baseBlock=%d firstTile=%d palNum=%d\n",
+            windowId, windowLocal.window.bg,
+            (int)GetBgAttribute(windowLocal.window.bg, BG_ATTR_BASETILE),
+            windowLocal.window.baseBlock,
+            (int)(GetBgAttribute(windowLocal.window.bg, BG_ATTR_BASETILE) + windowLocal.window.baseBlock),
+            windowLocal.window.paletteNum);
+#endif
 
     WriteSequenceToBgTilemapBuffer(
         windowLocal.window.bg,

@@ -1207,9 +1207,16 @@ bool32 IsInvalidBg32(u8 bg)
 
 bool32 IsTileMapOutsideWram(u8 bg)
 {
+#if HOST_NATIVE
+    /* On native 64-bit, heap pointers are far above IWRAM_END.
+     * Only reject NULL — all other pointers are valid writable memory. */
+    if (sGpuBgConfigs2[bg].tilemap == NULL)
+        return TRUE;
+#else
     if (sGpuBgConfigs2[bg].tilemap > (void *)IWRAM_END)
         return TRUE;
     if (sGpuBgConfigs2[bg].tilemap == 0x0)
         return TRUE;
+#endif
     return FALSE;
 }

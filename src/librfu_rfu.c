@@ -354,6 +354,11 @@ u16 rfu_MBOOT_CHILD_inheritanceLinkStatus(void)
 
 void rfu_REQ_stopMode(void)
 {
+#if HOST_NATIVE
+    /* No wireless adapter — skip hardware timer spins.
+     * Just report success via callback. */
+    rfu_STC_REQ_callback(ID_STOP_MODE_REQ, 0);
+#else
     vu32 *timerReg;
 
     if (REG_IME == 0)
@@ -382,6 +387,7 @@ void rfu_REQ_stopMode(void)
             rfu_STC_REQ_callback(ID_STOP_MODE_REQ, 0);
         }
     }
+#endif
 }
 
 static void rfu_CB_stopMode(u8 reqCommand, u16 reqResult)
@@ -393,6 +399,10 @@ static void rfu_CB_stopMode(u8 reqCommand, u16 reqResult)
 
 u32 rfu_REQBN_softReset_and_checkID(void)
 {
+#if HOST_NATIVE
+    /* No wireless adapter — report no ID found */
+    return 1;
+#else
     u32 id;
 
     if (REG_IME == 0)
@@ -402,6 +412,7 @@ u32 rfu_REQBN_softReset_and_checkID(void)
     if ((id = AgbRFU_checkID(30)) == 0)
         REG_SIOCNT = SIO_MULTI_MODE;
     return id;
+#endif
 }
 
 void rfu_REQ_reset(void)

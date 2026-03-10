@@ -1,6 +1,9 @@
 #include "global.h"
 #include "window.h"
 #include "text.h"
+#ifdef PFR_DIAG
+#include <stdio.h>
+#endif
 
 static EWRAM_DATA struct TextPrinter sTempTextPrinter = {0};
 static EWRAM_DATA struct TextPrinter sTextPrinters[NUM_TEXT_PRINTERS] = {0};
@@ -190,7 +193,15 @@ void DecompressGlyphTile(const u16 *src, u16 *dest)
 
     for (i = 0; i < 16; i++)
     {
-        int offsetIndex = (i << 31) ? (u8)*src++ : (*src >> 8);
+        /* Original code used (i << 31) to test the low bit of i.
+         * That is undefined behavior in C for i >= 1 on a 32-bit int
+         * (shifting into/past the sign bit).  On the GBA's ARM7 the
+         * barrel shifter produces the expected 0 / non-zero result,
+         * but a native x86-64 compiler may exploit the UB and
+         * mis-compile the branch, causing garbled text.
+         * Fix: use (i & 1) which has identical semantics and is
+         * well-defined for all values of i. */
+        int offsetIndex = (i & 1) ? (u8)*src++ : (*src >> 8);
         dest[i] = sFontHalfRowLookupTable[sFontHalfRowOffsets[offsetIndex]];
     }
 }
@@ -238,7 +249,21 @@ void CopyGlyphToWindow(struct TextPrinter *textPrinter)
 {
     int glyphWidth, glyphHeight;
     u8 sizeType;
-    
+
+#ifdef PFR_DIAG
+    {
+        static u32 sDiagLastFrame2 = (u32)-1;
+        extern u32 HostDisplayGetFrameCount(void);
+        u32 curFrame = HostDisplayGetFrameCount();
+        if (curFrame != sDiagLastFrame2) {
+            sDiagLastFrame2 = curFrame;
+            fprintf(stderr, "[PFR_DIAG] CopyGlyphToWindow: winId=%d glyphW=%d glyphH=%d currentX=%d currentY=%d\n",
+                    textPrinter->printerTemplate.windowId, gGlyphInfo.width, gGlyphInfo.height,
+                    textPrinter->printerTemplate.currentX, textPrinter->printerTemplate.currentY);
+        }
+    }
+#endif
+
     if (gWindows[textPrinter->printerTemplate.windowId].window.width * 8 - textPrinter->printerTemplate.currentX < gGlyphInfo.width)
         glyphWidth = gWindows[textPrinter->printerTemplate.windowId].window.width * 8 - textPrinter->printerTemplate.currentX;
     else
