@@ -188,7 +188,7 @@ static u16 MapNamePopupCreateWindow(bool32 palintoFadedBuffer)
 
 static void MapNamePopupPrintMapNameOnWindow(u16 windowId)
 {
-    u8 mapName[25];
+    u8 mapName[32];
     u32 maxWidth = 112;
     u32 xpos;
     u8 *ptr = GetMapName(mapName, gMapHeader.regionMapSectionId, 0);
