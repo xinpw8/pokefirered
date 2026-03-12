@@ -1,4 +1,5 @@
 #include "global.h"
+#include "host_pointer_codec.h"
 #include "gflib.h"
 #include "script.h"
 #include "mystery_event_script.h"
@@ -42,6 +43,11 @@ extern u16 (*const gSpecials[])(void);
 extern u16 (*const gSpecialsEnd[])(void);
 extern const u8 *const gStdScripts[];
 extern const u8 *const gStdScriptsEnd[];
+
+static const u8 *ScriptDataPointer(const struct ScriptContext *ctx, u8 index)
+{
+    return HostDecodeScriptPointer(ctx->data[index]);
+}
 
 static bool8 ScriptContext_NextCommandEndsScript(struct ScriptContext * ctx);
 static u8 ScriptContext_GetQuestLogInput(struct ScriptContext * ctx);
@@ -1265,7 +1271,7 @@ bool8 ScrCmd_message(struct ScriptContext * ctx)
     const u8 *msg = ScriptReadPointer(ctx);
 
     if (msg == NULL)
-        msg = (const u8 *)ctx->data[0];
+        msg = ScriptDataPointer(ctx, 0);
     ShowFieldMessage(msg);
     return FALSE;
 }
@@ -1275,7 +1281,7 @@ bool8 ScrCmd_loadhelp(struct ScriptContext * ctx)
     const u8 *msg = ScriptReadPointer(ctx);
 
     if (msg == NULL)
-        msg = (const u8 *)ctx->data[0];
+        msg = ScriptDataPointer(ctx, 0);
     DrawHelpMessageWindowWithText(msg);
     CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
     return FALSE;
@@ -1292,7 +1298,7 @@ bool8 ScrCmd_messageautoscroll(struct ScriptContext * ctx)
     const u8 *msg = ScriptReadPointer(ctx);
 
     if (msg == NULL)
-        msg = (const u8 *)ctx->data[0];
+        msg = ScriptDataPointer(ctx, 0);
     ShowFieldAutoScrollMessage(msg);
     return FALSE;
 }
@@ -1558,7 +1564,7 @@ bool8 ScrCmd_braillemessage(struct ScriptContext * ctx)
 {
     u8 *msg = (u8 *)ScriptReadPointer(ctx);
     if (msg == NULL)
-        msg = (u8 *)ctx->data[0];
+        msg = (u8 *)ScriptDataPointer(ctx, 0);
 
     LoadStdWindowFrameGfx();
     DrawDialogueFrame(0, 1);
@@ -1570,7 +1576,7 @@ bool8 ScrCmd_getbraillestringwidth(struct ScriptContext * ctx)
 {
     u8 *msg = (u8 *)ScriptReadPointer(ctx);
     if (msg == NULL)
-        msg = (u8 *)ctx->data[0];
+        msg = (u8 *)ScriptDataPointer(ctx, 0);
 
     gSpecialVar_0x8004 = GetStringWidth(FONT_BRAILLE, msg, -1);
     return FALSE;
