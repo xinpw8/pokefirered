@@ -111,8 +111,8 @@ void DoEasyChatScreen(u8 type, u16 *words, MainCallback callback)
     ResetTasks();
     taskId = CreateTask(Task_InitEasyChat, 0);
     gTasks[taskId].data[EZCHAT_TASK_TYPE] = type;
-    SetWordTaskArg(taskId, EZCHAT_TASK_WORDS, (uintptr_t)words);
-    SetWordTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK, (uintptr_t)callback);
+    SetPointerTaskArg(taskId, EZCHAT_TASK_WORDS, words);
+    SetPointerTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK, (const void *)callback);
     SetMainCallback2(CB2_EasyChatScreen);
 }
 
@@ -194,7 +194,7 @@ static void Task_RunEasyChat(u8 taskId)
                 FlagSet(FLAG_SYS_SET_TRAINER_CARD_PROFILE);
                 CompareProfileResponseWithPassphrase();
             }
-            DismantleEasyChat((MainCallback)GetWordTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
+            DismantleEasyChat((MainCallback)GetPointerTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
         }
         break;
     }
@@ -216,19 +216,19 @@ static bool8 Task_InitEasyChatInternal(u8 taskId)
     case 1:
         if (!InitEasyChatSelection())
         {
-            DismantleEasyChat((MainCallback)GetWordTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
+            DismantleEasyChat((MainCallback)GetPointerTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
         }
         break;
     case 2:
-        if (!EasyChat_AllocateResources(data[EZCHAT_TASK_TYPE], (u16 *)GetWordTaskArg(taskId, EZCHAT_TASK_WORDS)))
+        if (!EasyChat_AllocateResources(data[EZCHAT_TASK_TYPE], GetPointerTaskArg(taskId, EZCHAT_TASK_WORDS)))
         {
-            DismantleEasyChat((MainCallback)GetWordTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
+            DismantleEasyChat((MainCallback)GetPointerTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
         }
         break;
     case 3:
         if (!InitEasyChatGraphicsWork())
         {
-            DismantleEasyChat((MainCallback)GetWordTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
+            DismantleEasyChat((MainCallback)GetPointerTaskArg(taskId, EZCHAT_TASK_MAINCALLBACK));
         }
         break;
     case 4:

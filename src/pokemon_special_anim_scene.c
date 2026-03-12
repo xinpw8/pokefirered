@@ -704,7 +704,7 @@ void PSA_SetUpZoomAnim(u8 closeness)
     if (closeness != scene->lastCloseness)
     {
         taskId = CreateTask(Task_ZoomAnim, 4);
-        SetWordTaskArg(taskId, tOff_MonSprite, (uintptr_t)scene->monSprite);
+        SetPointerTaskArg(taskId, tOff_MonSprite, scene->monSprite);
         gTasks[taskId].tCurrCloseness = scene->lastCloseness;
         gTasks[taskId].tFinalCloseness = closeness;
         gTasks[taskId].tDelay = 6;
@@ -723,13 +723,13 @@ bool8 PSA_IsZoomTaskActive(void)
 static void Task_ZoomAnim(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
-    struct Sprite *sprite = (void *)GetWordTaskArg(taskId, tOff_MonSprite);
+    struct Sprite *sprite = GetPointerTaskArg(taskId, tOff_MonSprite);
     switch (tState)
     {
     case 0:
         SetSpriteWithCloseness(sprite, tCurrCloseness);
         if (tHasItemSprite)
-            SetSpriteWithCloseness((void *)GetWordTaskArg(taskId, tOff_ItemSprite), tCurrCloseness);
+            SetSpriteWithCloseness(GetPointerTaskArg(taskId, tOff_ItemSprite), tCurrCloseness);
         tCurrCloseness += tDeltaCloseness;
         tState++;
         break;
@@ -739,7 +739,7 @@ static void Task_ZoomAnim(u8 taskId)
             PlaySE(SE_BALL_TRAY_EXIT);
             MonSpriteZoom_UpdateYPos(sprite, tCurrCloseness);
             if (tHasItemSprite)
-                ItemSpriteZoom_UpdateYPos((void *)GetWordTaskArg(taskId, tOff_ItemSprite), tCurrCloseness);
+                ItemSpriteZoom_UpdateYPos(GetPointerTaskArg(taskId, tOff_ItemSprite), tCurrCloseness);
             if (tCurrCloseness == tFinalCloseness)
             {
                 PSA_GetSceneWork()->lastCloseness = tFinalCloseness;
@@ -883,7 +883,7 @@ void PSA_SetUpItemUseOnMonAnim(u16 itemId, u8 closeness, bool32 a2)
         StartSpriteAffineAnim(scene->itemIconSprite, closeness);
         scene->itemIconSprite->invisible = TRUE;
         taskId = CreateTask(Task_ItemUseOnMonAnim, 2);
-        SetWordTaskArg(taskId, tOff_ItemSprite, (uintptr_t)scene->itemIconSprite);
+        SetPointerTaskArg(taskId, tOff_ItemSprite, scene->itemIconSprite);
         gTasks[taskId].tCloseness = closeness;
         gTasks[taskId].tYpos = GetYPosByScale(sAffineScales[closeness]);
         gTasks[taskId].tData6 = a2;
@@ -931,7 +931,7 @@ bool8 PSA_IsItemUseOnMonAnimActive(void)
 static void Task_ItemUseOnMonAnim(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
-    struct Sprite *sprite = (void *)GetWordTaskArg(taskId, tOff_ItemSprite);
+    struct Sprite *sprite = GetPointerTaskArg(taskId, tOff_ItemSprite);
     switch (tState)
     {
     case 0:
@@ -1159,8 +1159,8 @@ static void StartZoomOutAnimForUseTM(u8 closeness)
     if (closeness != scene->lastCloseness)
     {
         taskId = CreateTask(Task_ZoomAnim, 1);
-        SetWordTaskArg(taskId, tOff_MonSprite, (uintptr_t)scene->monSprite);
-        SetWordTaskArg(taskId, tOff_ItemSprite, (uintptr_t)scene->itemIconSprite);
+        SetPointerTaskArg(taskId, tOff_MonSprite, scene->monSprite);
+        SetPointerTaskArg(taskId, tOff_ItemSprite, scene->itemIconSprite);
         gTasks[taskId].tCurrCloseness = scene->lastCloseness;
         gTasks[taskId].tFinalCloseness = closeness;
         gTasks[taskId].tHasItemSprite = 1;

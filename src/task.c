@@ -1,4 +1,5 @@
 #include "global.h"
+#include "host_pointer_codec.h"
 #include "task.h"
 
 #define HEAD_SENTINEL 0xFE
@@ -143,8 +144,7 @@ void SetTaskFuncWithFollowupFunc(u8 taskId, TaskFunc func, TaskFunc followupFunc
 {
     u8 followupFuncIndex = NUM_TASK_DATA - 2; // Should be const.
 
-    gTasks[taskId].data[followupFuncIndex] = (s16)((u32)followupFunc);
-    gTasks[taskId].data[followupFuncIndex + 1] = (s16)((u32)followupFunc >> 16); // Store followupFunc as two half-words in the data array.
+    HostStorePointerHalfwords((u16 *)&gTasks[taskId].data[followupFuncIndex], (const void *)followupFunc);
     gTasks[taskId].func = func;
 }
 
@@ -152,7 +152,7 @@ void SwitchTaskToFollowupFunc(u8 taskId)
 {
     u8 followupFuncIndex = NUM_TASK_DATA - 2; // Should be const.
 
-    gTasks[taskId].func = (TaskFunc)((u16)(gTasks[taskId].data[followupFuncIndex]) | (gTasks[taskId].data[followupFuncIndex + 1] << 16));
+    gTasks[taskId].func = (TaskFunc)HostLoadPointerHalfwords((u16 *)&gTasks[taskId].data[followupFuncIndex]);
 }
 
 bool8 FuncIsActiveTask(TaskFunc func)
@@ -204,4 +204,18 @@ u32 GetWordTaskArg(u8 taskId, u8 dataElem)
         return (u16)gTasks[taskId].data[dataElem] | (gTasks[taskId].data[dataElem + 1] << 16);
     else
         return 0;
+}
+
+void SetPointerTaskArg(u8 taskId, u8 dataElem, const void *value)
+{
+    if (dataElem <= 14)
+        HostStorePointerHalfwords((u16 *)&gTasks[taskId].data[dataElem], value);
+}
+
+void *GetPointerTaskArg(u8 taskId, u8 dataElem)
+{
+    if (dataElem <= 14)
+        return HostLoadPointerHalfwords((u16 *)&gTasks[taskId].data[dataElem]);
+    else
+        return NULL;
 }

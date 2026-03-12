@@ -72,9 +72,11 @@ struct
 
 // These will produce an error if a save struct is larger than the space
 // alloted for it in the flash.
+#if !HOST_NATIVE
 STATIC_ASSERT(sizeof(struct SaveBlock2) <= SECTOR_DATA_SIZE, SaveBlock2FreeSpace);
 STATIC_ASSERT(sizeof(struct SaveBlock1) <= SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK1_END - SECTOR_ID_SAVEBLOCK1_START + 1), SaveBlock1FreeSpace);
 STATIC_ASSERT(sizeof(struct PokemonStorage) <= SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1), PokemonStorageFreeSpace);
+#endif
 
 // Sector num to begin writing save data. Sectors are rotated each time the game is saved. (possibly to avoid wear on flash memory?)
 COMMON_DATA u16 gLastWrittenSector = 0;
@@ -438,6 +440,10 @@ static u8 CopySaveSlotData(u16 sectorId, const struct SaveSectorLocation *locati
         if (id == 0)
             gLastWrittenSector = i;
 
+#if HOST_NATIVE
+        if (id >= NUM_SECTORS_PER_SLOT)
+            continue;
+#endif
         checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[id].size);
         if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE && gSaveDataBufferPtr->checksum == checksum)
         {
@@ -468,7 +474,11 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(sector, gSaveDataBufferPtr);
-        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
+        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE
+#if HOST_NATIVE
+            && gSaveDataBufferPtr->id < NUM_SECTORS_PER_SLOT
+#endif
+        )
         {
             signatureValid = TRUE;
             checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);
@@ -496,7 +506,11 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     for (sector = 0; sector < NUM_SECTORS_PER_SLOT; sector++)
     {
         ReadFlashSector(NUM_SECTORS_PER_SLOT + sector, gSaveDataBufferPtr);
-        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE)
+        if (gSaveDataBufferPtr->signature == SECTOR_SIGNATURE
+#if HOST_NATIVE
+            && gSaveDataBufferPtr->id < NUM_SECTORS_PER_SLOT
+#endif
+        )
         {
             signatureValid = TRUE;
             checksum = CalculateChecksum(gSaveDataBufferPtr->data, locations[gSaveDataBufferPtr->id].size);

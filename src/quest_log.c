@@ -871,7 +871,7 @@ bool8 QL_AvoidDisplay(void (*callback)(void))
         taskId = CreateTask(Task_AvoidDisplay, 80);
         gTasks[taskId].tTimer = 0;
         gTasks[taskId].tState = 0;
-        SetWordTaskArg(taskId, DATA_IDX_CALLBACK, (uintptr_t)callback);
+        SetPointerTaskArg(taskId, DATA_IDX_CALLBACK, (const void *)callback);
         return TRUE;
     }
     return FALSE;
@@ -899,7 +899,7 @@ static void Task_AvoidDisplay(u8 taskId)
             gQuestLogPlaybackState = QL_PLAYBACK_STATE_STOPPED;
             
             // Call the provided function (if any). In practice this is always QL_DestroyAbortedDisplay
-            routine = (void (*)(void)) GetWordTaskArg(taskId, DATA_IDX_CALLBACK);
+            routine = (void (*)(void))GetPointerTaskArg(taskId, DATA_IDX_CALLBACK);
             if (routine != NULL)
                 routine();
 

@@ -518,7 +518,7 @@ static void Task_RevealTrainer_RunTrainerSeeFuncList(u8 taskId)
     struct ObjectEvent * trainerObj;
 
     // another objEvent loaded into by loadword?
-    LoadWordFromTwoHalfwords((u16 *)&task->data[1], (u32 *)&trainerObj);
+    trainerObj = LoadPointerFromTwoHalfwords((u16 *)&task->data[1]);
     if (!task->data[7])
     {
         ObjectEventClearHeldMovement(trainerObj);
@@ -539,7 +539,7 @@ static void Task_RevealTrainer_RunTrainerSeeFuncList(u8 taskId)
 
 void MovementAction_RevealTrainer_RunTrainerSeeFuncList(struct ObjectEvent *var)
 {
-    StoreWordInTwoHalfwords((u16 *)&gTasks[CreateTask(Task_RevealTrainer_RunTrainerSeeFuncList, 0)].data[1], (u32)var);
+    StorePointerInTwoHalfwords((u16 *)&gTasks[CreateTask(Task_RevealTrainer_RunTrainerSeeFuncList, 0)].data[1], var);
 }
 
 void EndTrainerApproach(void)

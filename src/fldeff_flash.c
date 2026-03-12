@@ -426,7 +426,7 @@ static void Task_MapPreviewScreen_0(u8 taskId)
     switch (data[0])
     {
     case 0:
-        SetWordTaskArg(taskId, 5, (uintptr_t)gMain.vblankCallback);
+        SetPointerTaskArg(taskId, 5, (const void *)gMain.vblankCallback);
         SetVBlankCallback(NULL);
         MapPreview_InitBgs();
         MapPreview_LoadGfx(data[3]);
@@ -445,7 +445,7 @@ static void Task_MapPreviewScreen_0(u8 taskId)
         if (!IsDma3ManagerBusyWithBgCopy())
         {
             BeginNormalPaletteFade(PALETTES_ALL, -1, 16, 0, RGB_BLACK);
-            SetVBlankCallback((IntrCallback)GetWordTaskArg(taskId, 5));
+            SetVBlankCallback((IntrCallback)GetPointerTaskArg(taskId, 5));
             data[0]++;
         }
         break;

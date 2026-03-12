@@ -65,6 +65,10 @@ struct ToneData
     u8 decay;
     u8 sustain;
     u8 release;
+#if HOST_NATIVE
+    // On 64-bit hosts, keysplit needs a real pointer instead of a packed 32-bit payload.
+    const u8 *keySplitTable;
+#endif
 };
 
 #define SOUND_CHANNEL_SF_START       0x80
@@ -401,13 +405,21 @@ extern const u8 gNoiseTable[];
 
 extern const struct PokemonCrySong gPokemonCrySongTemplate;
 
+#if HOST_NATIVE
+extern struct ToneData voicegroup000[];
+#else
 extern const struct ToneData voicegroup000;
+#endif
 
+#if HOST_NATIVE
+#define NUM_MUSIC_PLAYERS 4
+#define MAX_LINES 0
+#else
 extern char gNumMusicPlayers[];
 extern char gMaxLines[];
-
 #define NUM_MUSIC_PLAYERS ((u16)gNumMusicPlayers)
 #define MAX_LINES ((u32)gMaxLines)
+#endif
 
 u32 umul3232H32(u32 multiplier, u32 multiplicand);
 void SoundMain(void);

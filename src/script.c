@@ -1,4 +1,5 @@
 #include "global.h"
+#include "host_pointer_codec.h"
 #include "script.h"
 #include "event_data.h"
 #include "quest_log.h"
@@ -192,6 +193,11 @@ u32 ScriptReadWord(struct ScriptContext *ctx)
     u32 value2 = *(ctx->scriptPtr++);
     u32 value3 = *(ctx->scriptPtr++);
     return (((((value3 << 8) + value2) << 8) + value1) << 8) + value0;
+}
+
+const void *ScriptReadPointer(struct ScriptContext *ctx)
+{
+    return HostDecodeScriptPointer(ScriptReadWord(ctx));
 }
 
 void LockPlayerFieldControls(void)

@@ -69,6 +69,10 @@ void MPlayFadeOut(struct MusicPlayerInfo *mplayInfo, u16 speed)
 
 void m4aSoundInit(void)
 {
+#if HOST_NATIVE
+    extern void HostNativeSoundInit(void);
+    HostNativeSoundInit();
+#else
     s32 i;
 
     CpuCopy32((void *)((s32)SoundMainRAM & ~1), SoundMainRAM_Buffer, sizeof(SoundMainRAM_Buffer));
@@ -97,6 +101,7 @@ void m4aSoundInit(void)
         MPlayOpen(mplayInfo, track, 2);
         track->chan = 0;
     }
+#endif
 }
 
 void m4aSoundMain(void)
@@ -111,7 +116,8 @@ void m4aSongNumStart(u16 n)
     const struct Song *song = &songTable[n];
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
 
-    MPlayStart(mplay->info, song->header);
+    if (song->header != NULL)
+        MPlayStart(mplay->info, song->header);
 }
 
 void m4aSongNumStartOrChange(u16 n)
@@ -120,6 +126,9 @@ void m4aSongNumStartOrChange(u16 n)
     const struct Song *songTable = gSongTable;
     const struct Song *song = &songTable[n];
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
+
+    if (song->header == NULL)
+        return;
 
     if (mplay->info->songHeader != song->header)
     {
@@ -327,7 +336,10 @@ void MPlayExtender(struct CgbChannel *cgbChans)
 
 void MusicPlayerJumpTableCopy(void)
 {
+#if HOST_NATIVE
+#else
     asm("swi 0x2A");
+#endif
 }
 
 void ClearChain(void *x)
@@ -1543,6 +1555,10 @@ void ply_xxx(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
 
 void ply_xwave(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
 {
+#if HOST_NATIVE
+    (void)mplayInfo;
+    track->cmdPtr += 4;
+#else
     u32 wav;
 
 #ifdef UBFIX
@@ -1556,6 +1572,7 @@ void ply_xwave(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track
 
     track->tone.wav = (struct WaveData *)wav;
     track->cmdPtr += 4;
+#endif
 }
 
 void ply_xtype(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *track)
@@ -1689,7 +1706,11 @@ start_song:
     gPokemonCrySongs[i].tone = tone;
     gPokemonCrySongs[i].part[0] = &gPokemonCrySongs[i].part0;
     gPokemonCrySongs[i].part[1] = &gPokemonCrySongs[i].part1;
+#if HOST_NATIVE
+    gPokemonCrySongs[i].gotoTarget = (u32)((u8 *)&gPokemonCrySongs[i].cont - (u8 *)&gPokemonCrySongs[i].gotoTarget);
+#else
     gPokemonCrySongs[i].gotoTarget = (u32)&gPokemonCrySongs[i].cont;
+#endif
 
     mplayInfo->ident = ID_NUMBER;
 

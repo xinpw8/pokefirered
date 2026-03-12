@@ -1085,7 +1085,7 @@ static void StartIntroSequence(void)
     struct IntroSequenceData * ptr = Alloc(sizeof(*ptr));
     SetIntroCB(ptr, IntroCB_Init);
     ptr->taskId = CreateTask(Task_CallIntroCallback, 3);
-    SetWordTaskArg(ptr->taskId, 0, (uintptr_t)ptr);
+    SetPointerTaskArg(ptr->taskId, 0, ptr);
 }
 
 static void SetIntroCB(struct IntroSequenceData * ptr, IntroCallback cb)
@@ -1096,7 +1096,7 @@ static void SetIntroCB(struct IntroSequenceData * ptr, IntroCallback cb)
 
 static void Task_CallIntroCallback(u8 taskId)
 {
-    struct IntroSequenceData * ptr = (void *)GetWordTaskArg(taskId, 0);
+    struct IntroSequenceData * ptr = GetPointerTaskArg(taskId, 0);
     
     // End intro early if player presses A/Start/Select
     if (JOY_NEW(A_BUTTON | START_BUTTON | SELECT_BUTTON) && ptr->callback != IntroCB_ExitToTitleScreen)
@@ -2118,7 +2118,7 @@ static void Scene3_StartGengarAttack(struct IntroSequenceData * this)
     u8 taskId;
     this->gengarAttackLanded = FALSE;
     taskId = CreateTask(Scene3_Task_GengarAttack, 4);
-    SetWordTaskArg(taskId, IDX_INTRO_DATA, (uintptr_t)this);
+    SetPointerTaskArg(taskId, IDX_INTRO_DATA, this);
     gTasks[taskId].tSinIdx = 64;
     gTasks[taskId].tBaseX = GetBgX(BG_SCENE3_GENGAR);
 }
@@ -2157,7 +2157,7 @@ static void Scene3_Task_GengarAttack(u8 taskId)
     case 2:
         // Gengar pauses at end of backward arc
         if (++tTimer == 14)
-            ((struct IntroSequenceData *)GetWordTaskArg(taskId, IDX_INTRO_DATA))->gengarAttackLanded = TRUE;
+            ((struct IntroSequenceData *)GetPointerTaskArg(taskId, IDX_INTRO_DATA))->gengarAttackLanded = TRUE;
         if (tTimer > 15)
         {
             tTimer = 0;

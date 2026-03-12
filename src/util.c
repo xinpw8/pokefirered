@@ -1,4 +1,5 @@
 #include "global.h"
+#include "host_pointer_codec.h"
 
 const u32 gBitTable[] =
 {
@@ -129,6 +130,16 @@ void StoreWordInTwoHalfwords(u16 *h, u32 w)
 void LoadWordFromTwoHalfwords(u16 *h, u32 *w)
 {
     *w = h[0] | (s16)h[1] << 16;
+}
+
+void StorePointerInTwoHalfwords(u16 *h, const void *p)
+{
+    HostStorePointerHalfwords(h, p);
+}
+
+void *LoadPointerFromTwoHalfwords(const u16 *h)
+{
+    return HostLoadPointerHalfwords(h);
 }
 
 void SetBgAffineStruct(struct BgAffineSrcData *src, u32 texX, u32 texY, s16 scrX, s16 scrY, s16 sx, s16 sy, u16 alpha)
