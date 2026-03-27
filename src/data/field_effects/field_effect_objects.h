@@ -12,10 +12,10 @@ static const union AnimCmd *const sAnimTable_Shadow[] =
     sAnim_Shadow,
 };
 
-static const struct SpriteFrameImage sPicTable_ShadowSmall[] = {obj_frame_tiles(gFieldEffectObjectPic_ShadowSmall) };
-static const struct SpriteFrameImage sPicTable_ShadowMedium[] = {obj_frame_tiles(gFieldEffectObjectPic_ShadowMedium) };
-static const struct SpriteFrameImage sPicTable_ShadowLarge[] = {obj_frame_tiles(gFieldEffectObjectPic_ShadowLarge) };
-static const struct SpriteFrameImage sPicTable_ShadowExtraLarge[] = { obj_frame_tiles(gFieldEffectObjectPic_ShadowExtraLarge) };
+static const struct SpriteFrameImage sPicTable_ShadowSmall[] = {{.data = (u8 *)gFieldEffectObjectPic_ShadowSmall, .size = 32}};
+static const struct SpriteFrameImage sPicTable_ShadowMedium[] = {{.data = (u8 *)gFieldEffectObjectPic_ShadowMedium, .size = 64}};
+static const struct SpriteFrameImage sPicTable_ShadowLarge[] = {{.data = (u8 *)gFieldEffectObjectPic_ShadowLarge, .size = 128}};
+static const struct SpriteFrameImage sPicTable_ShadowExtraLarge[] = {{.data = (u8 *)gFieldEffectObjectPic_ShadowExtraLarge, .size = 1024}};
 
 const struct SpriteTemplate gFieldEffectObjectTemplate_ShadowSmall =
 {
@@ -1186,7 +1186,7 @@ const struct SpriteTemplate gFieldEffectObjectTemplate_ShortGrass =
 
 static const struct SpriteFrameImage sPicTable_HotSpringsWater[] =
 {
-    obj_frame_tiles(gFieldEffectObjectPic_HotSpringsWater),
+    {.data = (u8 *)gFieldEffectObjectPic_HotSpringsWater, .size = 128},
 };
 
 static const union AnimCmd sAnim_HotSpringsWater[] =

@@ -368,8 +368,13 @@ static void BuildDoorTiles(u16 *tiles, u16 tileNum, const u8 *paletteNums)
 static void Task_AnimateDoor(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    const struct DoorAnimFrame *frames = (struct DoorAnimFrame *)HostPtrStore_Get(tFramesLo, tFramesHi);
+    const struct DoorGraphics *gfx = (struct DoorGraphics *)HostPtrStore_Get(tGfxLo, tGfxHi);
+#else
     const struct DoorAnimFrame *frames = (struct DoorAnimFrame *)((u16)tFramesHi << 16 | (u16)tFramesLo);
     const struct DoorGraphics *gfx = (struct DoorGraphics *)((u16)tGfxHi << 16 | (u16)tGfxLo);
+#endif
     if (!AnimateDoorFrame(gfx, frames, data))
         DestroyTask(taskId);
 }
@@ -416,10 +421,15 @@ static s8 StartDoorAnimationTask(const struct DoorGraphics *gfx, const struct Do
 
     tX = x;
     tY = y;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    HostPtrStore_Put(&tFramesLo, &tFramesHi, frames);
+    HostPtrStore_Put(&tGfxLo, &tGfxHi, gfx);
+#else
     tFramesLo = (uintptr_t)frames;
     tFramesHi = (uintptr_t)frames >> 16;
     tGfxLo = (uintptr_t)gfx;
     tGfxHi = (uintptr_t)gfx >> 16;
+#endif
     return taskId;
 }
 

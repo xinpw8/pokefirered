@@ -47,6 +47,7 @@ static void Task_FlipPages_FromInfo(u8 taskId);
 static void Task_PokeSum_SwitchDisplayedPokemon(u8 taskId);
 static void PokeSum_SeekToNextMon(u8 taskId, s8 direction);
 static void Task_DestroyResourcesOnExit(u8 taskId);
+static bool8 PokeSum_CanDestroyResourcesOnExit(void);
 static void PokeSum_HideSpritesBeforePageFlip(void);
 static void PokeSum_ShowSpritesBeforePageFlip(void);
 static void PokeSum_UpdateWin1ActiveFlag(u8 curPageIndex);
@@ -1223,7 +1224,7 @@ static void Task_InputHandler_Info(u8 taskId)
         sMonSummaryScreen->state3270 = PSS_STATE3270_ATEXIT_WAITFADE;
         break;
     default:
-        if (!gPaletteFade.active)
+        if (!gPaletteFade.active && PokeSum_CanDestroyResourcesOnExit())
             Task_DestroyResourcesOnExit(taskId);
 
         break;
@@ -2974,8 +2975,21 @@ static void CommitStaticWindowTilemaps(void)
     PutWindowTilemap(sMonSummaryScreen->windowIds[POKESUM_WIN_LVL_NICK]);
 }
 
+static bool8 PokeSum_CanDestroyResourcesOnExit(void)
+{
+    if (FuncIsActiveTask(Task_PokeSum_FlipPages))
+        return FALSE;
+
+    if (FuncIsActiveTask(Task_PokeSum_SwitchDisplayedPokemon))
+        return FALSE;
+
+    return TRUE;
+}
+
 static void Task_DestroyResourcesOnExit(u8 taskId)
 {
+    PokeSum_Setup_ResetCallbacks();
+    ClearDma3Requests();
     PokeSum_DestroySprites();
     FreeAllSpritePalettes();
 
@@ -3907,7 +3921,7 @@ static void Task_InputHandler_SelectOrForgetMove(u8 taskId)
         sMonSummaryScreen->selectMoveInputHandlerState++;
         break;
     default:
-        if (!gPaletteFade.active)
+        if (!gPaletteFade.active && PokeSum_CanDestroyResourcesOnExit())
             Task_DestroyResourcesOnExit(taskId);
         break;
     }

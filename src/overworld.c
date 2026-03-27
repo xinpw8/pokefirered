@@ -430,11 +430,22 @@ static void LoadObjEventTemplatesFromHeader(void)
 
 static void LoadSaveblockObjEventScripts(void)
 {
-    int i;
-    const struct ObjectEventTemplate * src = gMapHeader.events->objectEvents;
-    struct ObjectEventTemplate * savObjTemplates = gSaveBlock1Ptr->objectEventTemplates;
+    int i, count;
+    const struct ObjectEventTemplate * src;
+    struct ObjectEventTemplate * savObjTemplates;
 
-    for (i = 0; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
+    /* On GBA, NULL objectEvents reads from BIOS (harmless).
+     * On native, it segfaults.  Guard against it. */
+    if (gMapHeader.events == NULL || gMapHeader.events->objectEvents == NULL)
+        return;
+
+    src = gMapHeader.events->objectEvents;
+    savObjTemplates = gSaveBlock1Ptr->objectEventTemplates;
+    count = gMapHeader.events->objectEventCount;
+    if (count > OBJECT_EVENT_TEMPLATES_COUNT)
+        count = OBJECT_EVENT_TEMPLATES_COUNT;
+
+    for (i = 0; i < count; i++)
     {
         savObjTemplates[i].script = src[i].script;
     }

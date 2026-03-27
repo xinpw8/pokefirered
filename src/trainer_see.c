@@ -95,9 +95,11 @@ bool8 CheckForTrainersWantingBattle(void)
     {
         if (gObjectEvents[i].active
          && (gObjectEvents[i].trainerType == TRAINER_TYPE_NORMAL
-          || gObjectEvents[i].trainerType == TRAINER_TYPE_BURIED)
-         && CheckTrainer(i))
-            return TRUE;
+          || gObjectEvents[i].trainerType == TRAINER_TYPE_BURIED))
+        {
+            if (CheckTrainer(i))
+                return TRUE;
+        }
     }
     return FALSE;
 }
@@ -239,16 +241,26 @@ static u8 CheckPathBetweenTrainerAndPlayer(struct ObjectEvent *trainerObj, u8 ap
 #define tOutOfAshSpriteId   data[4]
 #define tData5              data[5]
 
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+#define TaskGetTrainerObj(dest, task) do { \
+    (dest) = (struct ObjectEvent *)HostPtrStore_Get((task)->tTrainerObjLo, (task)->tTrainerObjHi); \
+} while (0)
+#else
 #define TaskGetTrainerObj(dest, task) do { \
     (dest) = (struct ObjectEvent *)(((task)->tTrainerObjHi << 16) | ((u16)(task)->tTrainerObjLo)); \
 } while (0)
+#endif
 
 static void TrainerApproachPlayer(struct ObjectEvent * trainerObj, u8 approachDistance)
 {
     u8 taskId = CreateTask(Task_RunTrainerSeeFuncList, 80);
     struct Task *task = &gTasks[taskId];
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    HostPtrStore_Put(&task->tTrainerObjLo, &task->tTrainerObjHi, trainerObj);
+#else
     task->tTrainerObjHi = ((uintptr_t)trainerObj) >> 16;
     task->tTrainerObjLo = (uintptr_t)trainerObj;
+#endif
     task->tTrainerRange = approachDistance;
 }
 
@@ -517,8 +529,7 @@ static void Task_RevealTrainer_RunTrainerSeeFuncList(u8 taskId)
     struct Task *task = &gTasks[taskId];
     struct ObjectEvent * trainerObj;
 
-    // another objEvent loaded into by loadword?
-    LoadWordFromTwoHalfwords((u16 *)&task->data[1], (u32 *)&trainerObj);
+    trainerObj = (struct ObjectEvent *)GetWordTaskArg(taskId, 1);
     if (!task->data[7])
     {
         ObjectEventClearHeldMovement(trainerObj);
@@ -539,7 +550,7 @@ static void Task_RevealTrainer_RunTrainerSeeFuncList(u8 taskId)
 
 void MovementAction_RevealTrainer_RunTrainerSeeFuncList(struct ObjectEvent *var)
 {
-    StoreWordInTwoHalfwords((u16 *)&gTasks[CreateTask(Task_RevealTrainer_RunTrainerSeeFuncList, 0)].data[1], (u32)var);
+    SetWordTaskArg(CreateTask(Task_RevealTrainer_RunTrainerSeeFuncList, 0), 1, (uintptr_t)var);
 }
 
 void EndTrainerApproach(void)

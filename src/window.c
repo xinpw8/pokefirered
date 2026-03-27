@@ -487,7 +487,11 @@ bool8 SetWindowAttribute(u8 windowId, u8 attributeId, u32 value)
     }
 }
 
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+uintptr_t GetWindowAttribute(u8 windowId, u8 attributeId)
+#else
 u32 GetWindowAttribute(u8 windowId, u8 attributeId)
+#endif
 {
     switch (attributeId)
     {
@@ -506,7 +510,7 @@ u32 GetWindowAttribute(u8 windowId, u8 attributeId)
     case WINDOW_BASE_BLOCK:
         return gWindows[windowId].window.baseBlock;
     case WINDOW_TILE_DATA:
-        return (u32)(gWindows[windowId].tileData);
+        return (uintptr_t)(gWindows[windowId].tileData);
     default:
         return 0;
     }

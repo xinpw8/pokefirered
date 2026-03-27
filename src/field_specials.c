@@ -50,6 +50,8 @@ static EWRAM_DATA u16 sListMenuLastScrollPosition = 0;
 static EWRAM_DATA u8 sPCBoxToSendMon = 0;
 static EWRAM_DATA u8 sBrailleTextCursorSpriteID = 0;
 
+
+
 COMMON_DATA struct ListMenuTemplate sFieldSpecialsListMenuTemplate = {0};
 COMMON_DATA u16 sFieldSpecialsListMenuScrollBuffer = 0;
 
@@ -81,7 +83,7 @@ static void MoveDeoxysObject(u8 num);
 static void Task_WaitDeoxysFieldEffect(u8 taskId);
 static void Task_WingFlapSound(u8 taskId);
 
-static u8 *const sStringVarPtrs[] = {
+static u8 * sStringVarPtrs[] = {
     gStringVar1,
     gStringVar2,
     gStringVar3

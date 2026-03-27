@@ -179,8 +179,7 @@ static void FieldCallback_Flash(void)
 {
     u8 taskId = CreateFieldEffectShowMon();
     gFieldEffectArguments[0] = GetCursorSelectionMonId();
-    gTasks[taskId].data[8] = ((uintptr_t)FldEff_UseFlash) >> 16;
-    gTasks[taskId].data[9] = ((uintptr_t)FldEff_UseFlash);
+    FLDEFF_SET_FUNC_TO_DATA(FldEff_UseFlash);
 }
 
 static void FldEff_UseFlash(void)

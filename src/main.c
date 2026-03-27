@@ -138,6 +138,8 @@ void AgbMain()
     ClearDma3Requests();
     ResetBgs();
     InitHeap(gHeap, HEAP_SIZE);
+    extern void InitSpecialVars(void);
+    InitSpecialVars();
     SetDefaultFontsPointer();
 
     gSoftResetDisabled = FALSE;

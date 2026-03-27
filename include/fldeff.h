@@ -1,11 +1,31 @@
 #ifndef GUARD_FLDEFF_H
 #define GUARD_FLDEFF_H
 
+#if HOST_NATIVE
+#define FLDEFF_CALL_FUNC_IN_DATA()                                          \
+{                                                                           \
+    uintptr_t _addr = ((uintptr_t)(u16)gTasks[taskId].data[8] << 48)       \
+                    | ((uintptr_t)(u16)gTasks[taskId].data[9] << 32)        \
+                    | ((uintptr_t)(u16)gTasks[taskId].data[10] << 16)       \
+                    | ((uintptr_t)(u16)gTasks[taskId].data[11]);            \
+    ((void (*)(void))_addr)();                                              \
+}
+
+#define FLDEFF_SET_FUNC_TO_DATA(func)                          \
+{                                                              \
+    uintptr_t _fptr = (uintptr_t)(func);                       \
+    gTasks[taskId].data[8]  = (s16)((_fptr >> 48) & 0xFFFF);   \
+    gTasks[taskId].data[9]  = (s16)((_fptr >> 32) & 0xFFFF);   \
+    gTasks[taskId].data[10] = (s16)((_fptr >> 16) & 0xFFFF);   \
+    gTasks[taskId].data[11] = (s16)(_fptr & 0xFFFF);           \
+}
+#else
 #define FLDEFF_CALL_FUNC_IN_DATA() ((void (*)(void))(((u16)gTasks[taskId].data[8] << 16) | (u16)gTasks[taskId].data[9]))();
 
 #define FLDEFF_SET_FUNC_TO_DATA(func)                     \
 gTasks[taskId].data[8] = (u32)func >> 16;                 \
 gTasks[taskId].data[9] = (u32)func;
+#endif
 
 extern struct MapPosition gPlayerFacingPosition;
 

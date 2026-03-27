@@ -93,6 +93,8 @@ static EWRAM_DATA u16 sNextActionDelay = 0;
 static EWRAM_DATA u16 sLastQuestLogCursor = 0;
 static EWRAM_DATA u16 sFlagOrVarPlayhead = 0;
 
+
+
 static void QLogCB_Recording(void);
 static void QLogCB_Playback(void);
 static void SetPlayerInitialCoordsAtScene(u8);
@@ -457,6 +459,14 @@ void TryStartQuestLogPlayback(u8 taskId)
             sNumScenes++;
     }
 
+#if HOST_NATIVE
+    /* On native builds, skip Quest Log playback — the field effect script
+     * interpreter has embedded 32-bit pointers that crash on 64-bit.
+     * Go directly to the saved game. */
+    (void)sNumScenes;
+    SetMainCallback2(CB2_ContinueSavedGame);
+    DestroyTask(taskId);
+#else
     if (sNumScenes != 0)
     {
         gHelpSystemEnabled = FALSE;
@@ -468,6 +478,7 @@ void TryStartQuestLogPlayback(u8 taskId)
         SetMainCallback2(CB2_ContinueSavedGame);
         DestroyTask(taskId);
     }
+#endif
 }
 
 static void Task_BeginQuestLogPlayback(u8 taskId)

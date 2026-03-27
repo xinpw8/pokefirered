@@ -630,6 +630,12 @@ bool8 IsBattleTransitionDone(void)
     u8 taskId = FindTaskIdByFunc(Task_BattleTransition);
     if (gTasks[taskId].tTransitionDone)
     {
+        // The transition task can complete while its scanline ISR hooks are
+        // still installed. Tear those down before freeing the shared state so
+        // the next host VBlank/HBlank does not touch released memory.
+        DmaStop(0);
+        SetVBlankCallback(NULL);
+        SetHBlankCallback(NULL);
         InitTransitionData();
         FREE_AND_SET_NULL(sTransitionData);
         DestroyTask(taskId);

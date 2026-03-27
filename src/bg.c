@@ -494,6 +494,10 @@ bool8 IsDma3ManagerBusyWithBgCopy(void)
 {
     int i;
 
+#ifdef HOST_NATIVE
+    ProcessDma3Requests();
+#endif
+
     for (i = 0; i < 0x80; i++)
     {
         u8 div = i / 0x20;

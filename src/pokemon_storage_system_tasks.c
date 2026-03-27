@@ -395,16 +395,23 @@ static void VBlankCB_PokeStorage(void)
     ProcessSpriteCopyRequests();
     UnkUtil_Run();
     TransferPlttBuffer();
-    SetGpuReg(REG_OFFSET_BG2HOFS, gStorage->bg2_X);
+    if (gStorage != NULL)
+        SetGpuReg(REG_OFFSET_BG2HOFS, gStorage->bg2_X);
 }
 
 static void CB2_PokeStorage(void)
 {
+    bool32 storageActive;
+
     RunTasks();
+    storageActive = (gStorage != NULL && gMain.callback2 == CB2_PokeStorage);
     DoScheduledBgTilemapCopiesToVram();
-    ScrollBackground();
-    UpdateCloseBoxButtonFlash();
-    AnimateSprites();
+    if (storageActive)
+    {
+        ScrollBackground();
+        UpdateCloseBoxButtonFlash();
+        AnimateSprites();
+    }
     BuildOamBuffer();
 }
 

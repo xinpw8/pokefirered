@@ -18,7 +18,11 @@ struct ScriptContext
     const u8 *stack[20];
     ScrCmdFunc *cmdTable;
     ScrCmdFunc *cmdTableEnd;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    uintptr_t data[4];
+#else
     u32 data[4];
+#endif
 };
 
 #define ScriptReadByte(ctx) (*(ctx->scriptPtr++))
@@ -33,6 +37,7 @@ void ScriptCall(struct ScriptContext *ctx, const u8 *ptr);
 void ScriptReturn(struct ScriptContext *ctx);
 u16 ScriptReadHalfword(struct ScriptContext *ctx);
 u32 ScriptReadWord(struct ScriptContext *ctx);
+const u8 *ScriptReadPtr(struct ScriptContext *ctx);
 void LockPlayerFieldControls(void);
 void UnlockPlayerFieldControls(void);
 bool8 ArePlayerFieldControlsLocked(void);

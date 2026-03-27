@@ -71,7 +71,16 @@ void SetSaveBlocksPointers(void)
     struct SaveBlock1** sav1_LocalVar = &gSaveBlock1Ptr;
     void *oldSave = (void *)gSaveBlock1Ptr;
 
+#if HOST_NATIVE
+    // ASLR offset is a GBA anti-tamper measure that relies on the
+    // _DMA buffers being contiguous with their save blocks in
+    // memory.  On native 64-bit the linker does not guarantee this
+    // layout and the offset serves no purpose, so pin it to 0.
+    offset = 0;
+    (void)Random(); // consume the RNG call to keep the sequence stable
+#else
     offset = (Random()) & ((SAVEBLOCK_MOVE_RANGE - 1) & ~3);
+#endif
 
     gSaveBlock2Ptr = (void *)(&gSaveBlock2) + offset;
     *sav1_LocalVar = (void *)(&gSaveBlock1) + offset;
@@ -125,6 +134,37 @@ void MoveSaveBlocks_ResetHeap(void)
     encryptionKey = (Random() << 0x10) + (Random());
     ApplyNewEncryptionKeyToAllEncryptedData(encryptionKey);
     gSaveBlock2Ptr->encryptionKey = encryptionKey;
+#if HOST_NATIVE
+    {
+        extern void HostLogPrintf(const char *fmt, ...);
+        extern u32 GetMoney(u32 *moneyPtr);
+        extern u16 GetBagItemQuantity(u16 *ptr);
+        int _i;
+        HostLogPrintf("[pokefirered-native] MoveSaveBlocks_ResetHeap: encKey=0x%08X money=%u\n",
+            encryptionKey, GetMoney(&gSaveBlock1Ptr->money));
+        for (_i = 0; _i < BAG_ITEMS_COUNT; _i++)
+        {
+            if (gSaveBlock1Ptr->bagPocket_Items[_i].itemId != 0)
+                HostLogPrintf("  bag[items][%d] = id=%u qty=%u\n", _i,
+                    gSaveBlock1Ptr->bagPocket_Items[_i].itemId,
+                    GetBagItemQuantity(&gSaveBlock1Ptr->bagPocket_Items[_i].quantity));
+        }
+        for (_i = 0; _i < BAG_KEYITEMS_COUNT; _i++)
+        {
+            if (gSaveBlock1Ptr->bagPocket_KeyItems[_i].itemId != 0)
+                HostLogPrintf("  bag[key][%d] = id=%u qty=%u\n", _i,
+                    gSaveBlock1Ptr->bagPocket_KeyItems[_i].itemId,
+                    GetBagItemQuantity(&gSaveBlock1Ptr->bagPocket_KeyItems[_i].quantity));
+        }
+        for (_i = 0; _i < BAG_POKEBALLS_COUNT; _i++)
+        {
+            if (gSaveBlock1Ptr->bagPocket_PokeBalls[_i].itemId != 0)
+                HostLogPrintf("  bag[balls][%d] = id=%u qty=%u\n", _i,
+                    gSaveBlock1Ptr->bagPocket_PokeBalls[_i].itemId,
+                    GetBagItemQuantity(&gSaveBlock1Ptr->bagPocket_PokeBalls[_i].quantity));
+        }
+    }
+#endif
 }
 
 u32 UseContinueGameWarp(void)

@@ -275,7 +275,7 @@ void DecompressAndLoadBgGfxUsingHeap(u8 bgId, const void *src, u32 size, u16 off
     {
         u8 taskId = CreateTask(TaskFreeBufAfterCopyingTileDataToVram, 0);
         gTasks[taskId].data[0] = CopyDecompressedTileDataToVram(bgId, ptr, size, offset, mode);
-        SetWordTaskArg(taskId, 1, (u32)ptr);
+        SetWordTaskArg(taskId, 1, (uintptr_t)ptr);
     }
 }
 
@@ -290,7 +290,7 @@ void DecompressAndLoadBgGfxUsingHeap2(u8 bgId, const void *src, u32 size, u16 of
     {
         u8 taskId = CreateTask(TaskFreeBufAfterCopyingTileDataToVram, 0);
         gTasks[taskId].data[0] = CopyDecompressedTileDataToVram(bgId, ptr, sizeOut, offset, mode);
-        SetWordTaskArg(taskId, 1, (u32)ptr);
+        SetWordTaskArg(taskId, 1, (uintptr_t)ptr);
     }
 }
 

@@ -21,6 +21,10 @@ void ResetTasks(void)
         gTasks[i].next = i + 1;
         gTasks[i].priority = -1;
         memset(gTasks[i].data, 0, sizeof(gTasks[i].data));
+#ifdef HOST_NATIVE
+        gTasks[i].followupFunc = NULL;
+        memset(gTasks[i].wordArgs, 0, sizeof(gTasks[i].wordArgs));
+#endif
     }
 
     gTasks[0].prev = HEAD_SENTINEL;
@@ -39,6 +43,10 @@ u8 CreateTask(TaskFunc func, u8 priority)
             gTasks[i].priority = priority;
             InsertTask(i);
             memset(gTasks[i].data, 0, sizeof(gTasks[i].data));
+#ifdef HOST_NATIVE
+            gTasks[i].followupFunc = NULL;
+            memset(gTasks[i].wordArgs, 0, sizeof(gTasks[i].wordArgs));
+#endif
             gTasks[i].isActive = TRUE;
             return i;
         }
@@ -141,18 +149,26 @@ void TaskDummy(u8 taskId)
 
 void SetTaskFuncWithFollowupFunc(u8 taskId, TaskFunc func, TaskFunc followupFunc)
 {
+#ifdef HOST_NATIVE
+    gTasks[taskId].followupFunc = followupFunc;
+#else
     u8 followupFuncIndex = NUM_TASK_DATA - 2; // Should be const.
 
     gTasks[taskId].data[followupFuncIndex] = (s16)((u32)followupFunc);
     gTasks[taskId].data[followupFuncIndex + 1] = (s16)((u32)followupFunc >> 16); // Store followupFunc as two half-words in the data array.
+#endif
     gTasks[taskId].func = func;
 }
 
 void SwitchTaskToFollowupFunc(u8 taskId)
 {
+#ifdef HOST_NATIVE
+    gTasks[taskId].func = gTasks[taskId].followupFunc;
+#else
     u8 followupFuncIndex = NUM_TASK_DATA - 2; // Should be const.
 
     gTasks[taskId].func = (TaskFunc)((u16)(gTasks[taskId].data[followupFuncIndex]) | (gTasks[taskId].data[followupFuncIndex + 1] << 16));
+#endif
 }
 
 bool8 FuncIsActiveTask(TaskFunc func)
@@ -195,9 +211,21 @@ void SetWordTaskArg(u8 taskId, u8 dataElem, unsigned long value)
     {
         gTasks[taskId].data[dataElem] = value;
         gTasks[taskId].data[dataElem + 1] = value >> 16;
+#ifdef HOST_NATIVE
+        gTasks[taskId].wordArgs[dataElem] = (uintptr_t)value;
+#endif
     }
 }
 
+#ifdef HOST_NATIVE
+uintptr_t GetWordTaskArg(u8 taskId, u8 dataElem)
+{
+    if (dataElem <= 14)
+        return gTasks[taskId].wordArgs[dataElem];
+    else
+        return 0;
+}
+#else
 u32 GetWordTaskArg(u8 taskId, u8 dataElem)
 {
     if (dataElem <= 14)
@@ -205,3 +233,4 @@ u32 GetWordTaskArg(u8 taskId, u8 dataElem)
     else
         return 0;
 }
+#endif

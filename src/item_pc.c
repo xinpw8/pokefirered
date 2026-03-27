@@ -51,6 +51,8 @@ static EWRAM_DATA u8 * sUnusedStringAllocation = NULL;
 static EWRAM_DATA struct ItemPcStaticResources sListMenuState = {};
 static EWRAM_DATA u8 sSubmenuWindowIds[3] = {};
 
+
+
 extern const struct CompressedSpriteSheet gBagSwapSpriteSheet;
 extern const struct CompressedSpritePalette gBagSwapSpritePalette;
 

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "global.h"
 #include "script.h"
 #include "event_data.h"
@@ -109,6 +110,15 @@ bool8 RunScriptCommand(struct ScriptContext *ctx)
             u8 cmdCode;
             ScrCmdFunc *cmdFunc;
 
+#if HOST_NATIVE
+            /* Debug: catch bad scriptPtr early */
+            if (ctx->scriptPtr != NULL && (uintptr_t)ctx->scriptPtr < 0x10000) {
+                fprintf(stderr, "FATAL: scriptPtr = %p (looks like a truncated address)\n",
+                        (void *)ctx->scriptPtr);
+                __builtin_trap();
+            }
+#endif
+
             if (ctx->scriptPtr == NULL)
             {
                 ctx->mode = SCRIPT_MODE_STOPPED;
@@ -117,8 +127,13 @@ bool8 RunScriptCommand(struct ScriptContext *ctx)
 
             if (ctx->scriptPtr == gNullScriptPtr)
             {
+#if HOST_NATIVE
+                ctx->mode = SCRIPT_MODE_STOPPED;
+                return FALSE;
+#else
                 while (1)
                     asm("svc 2"); // HALT
+#endif
             }
 
             cmdCode = *(ctx->scriptPtr);
@@ -192,6 +207,16 @@ u32 ScriptReadWord(struct ScriptContext *ctx)
     u32 value2 = *(ctx->scriptPtr++);
     u32 value3 = *(ctx->scriptPtr++);
     return (((((value3 << 8) + value2) << 8) + value1) << 8) + value0;
+}
+
+const u8 *ScriptReadPtr(struct ScriptContext *ctx)
+{
+    u32 raw = ScriptReadWord(ctx);
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    return HostScriptPtrLookup(raw);
+#else
+    return (const u8 *)(uintptr_t)raw;
+#endif
 }
 
 void LockPlayerFieldControls(void)

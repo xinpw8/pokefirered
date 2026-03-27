@@ -57,6 +57,8 @@ static EWRAM_DATA struct FameCheckerData * sFameCheckerData = NULL;
 static EWRAM_DATA struct ListMenuItem * sListMenuItems = NULL;
 static EWRAM_DATA s32 sLastMenuIdx = 0;
 
+
+
 COMMON_DATA struct ListMenuTemplate gFameChecker_ListMenuTemplate = {0};
 COMMON_DATA u8 gIconDescriptionBoxIsOpen = 0;
 
@@ -114,7 +116,7 @@ static u16 FameCheckerGetCursorY(void);
 static void HandleFlavorTextModeSwitch(bool8 state);
 static void Task_FCOpenOrCloseInfoBox(u8 taskId);
 static void UpdateInfoBoxTilemap(u8 bg, s16 state);
-static void PlaceListMenuCursor(bool8 isActive);
+static void FC_PlaceListMenuCursor(bool8 isActive);
 
 static const u16 sFameCheckerTilemap[] = INCBIN_U16("graphics/fame_checker/tilemap1.bin");
 static const u8 sQuestionMarkSpriteGfx[] = INCBIN_U8("graphics/fame_checker/question_mark.4bpp");
@@ -781,7 +783,7 @@ static void Task_TopMenuHandleInput(u8 taskId)
                         SetMessageSelectorIconObjMode(sFameCheckerData->spriteIds[i], ST_OAM_OBJ_BLEND);
                 }
                 gIconDescriptionBoxIsOpen = 0xFF;
-                PlaceListMenuCursor(FALSE);
+                FC_PlaceListMenuCursor(FALSE);
                 PrintUIHelp(2);
                 if (gSprites[sFameCheckerData->spriteIds[task->data[1]]].data[1] != 0xFF) // not a ? tile
                 {
@@ -880,7 +882,7 @@ static void Task_FlavorTextDisplayHandleInput(u8 taskId)
         gSprites[task->data[0]].callback = SpriteCB_DestroyFlavorTextIconSelectorCursor;
         if (gIconDescriptionBoxIsOpen != 0xFF)
             UpdateIconDescriptionBoxOff();
-        PlaceListMenuCursor(TRUE);
+        FC_PlaceListMenuCursor(TRUE);
         PrintUIHelp(0);
         FC_CreateScrollIndicatorArrowPair();
         MessageBoxPrintEmptyText();
@@ -1729,7 +1731,7 @@ static void UpdateInfoBoxTilemap(u8 bg, s16 state)
     CopyBgTilemapBufferToVram(bg);
 }
 
-static void PlaceListMenuCursor(bool8 isActive)
+static void FC_PlaceListMenuCursor(bool8 isActive)
 {
     u16 cursorY = ListMenuGetYCoordForPrintingArrowCursor(sFameCheckerData->listMenuTaskId);
     if (isActive == TRUE)

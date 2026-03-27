@@ -172,7 +172,9 @@ u16 rfu_initializeAPI(u32 *APIBuffer, u16 buffByteSize, IntrFunc *sioIntrTable_p
         gRfuSlotStatusUNI[i]->recvBuffer = NULL;
         gRfuSlotStatusUNI[i]->recvBufferSize = 0;
     }
+#if !HOST_NATIVE
     // rfu_REQ_changeMasterSlave is the function next to rfu_STC_fastCopy
+    // Copy ARM thumb code into RAM buffer — skip on native (not executable)
 #if LIBRFU_VERSION < 1026
     src = (const u16 *)((uintptr_t)&rfu_STC_fastCopy & ~1);
     dst = gRfuFixed->fastCopyBuffer;
@@ -188,15 +190,20 @@ u16 rfu_initializeAPI(u32 *APIBuffer, u16 buffByteSize, IntrFunc *sioIntrTable_p
         );
 #endif
     gRfuFixed->fastCopyPtr = (void *)gRfuFixed->fastCopyBuffer + 1;
+#endif
     return 0;
 }
 
 static void rfu_STC_clearAPIVariables(void)
 {
+#if !HOST_NATIVE
     u16 IMEBackup = REG_IME;
+#endif
     u8 i, flags;
 
+#if !HOST_NATIVE
     REG_IME = 0;
+#endif
     flags = gRfuStatic->flags;
     CpuFill16(0, gRfuStatic, sizeof(struct RfuStatic));
     gRfuStatic->flags = flags & 8;
@@ -208,7 +215,9 @@ static void rfu_STC_clearAPIVariables(void)
     gRfuStatic->SCStartFlag = 0;
     for (i = 0; i < RFU_CHILD_MAX; ++i)
         gRfuStatic->cidBak[i] = 0;
+#if !HOST_NATIVE
     REG_IME = IMEBackup;
+#endif
 }
 
 void rfu_REQ_PARENT_resumeRetransmitAndChange(void)

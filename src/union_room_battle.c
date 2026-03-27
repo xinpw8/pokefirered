@@ -18,6 +18,8 @@ struct UnionRoomBattleWork
 
 static EWRAM_DATA struct UnionRoomBattleWork * sWork = NULL;
 
+
+
 static const struct BgTemplate sBgTemplates[] = {
     {
         .bg = 0,

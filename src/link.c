@@ -161,7 +161,7 @@ static const u16 sWirelessLinkDisplayTilemap[] = INCBIN_U16("graphics/link/wirel
 static const u16 sLinkTestFontPal[] = INCBIN_U16("graphics/link/test_font.gbapal");
 static const u16 sLinkTestFontGfx[] = INCBIN_U16("graphics/link/test_font.4bpp");
 
-static const struct BlockRequest sBlockRequests[] = {
+static struct BlockRequest sBlockRequests[] = {
     [BLOCK_REQ_SIZE_NONE] = { gBlockSendBuffer, 200 },
     [BLOCK_REQ_SIZE_200]  = { gBlockSendBuffer, 200 },
     [BLOCK_REQ_SIZE_100]  = { gBlockSendBuffer, 100 },
@@ -217,6 +217,10 @@ static const u8 sLinkErrorTextColor[] = { 0x00, 0x01, 0x02 };
 
 bool8 IsWirelessAdapterConnected(void)
 {
+#if HOST_NATIVE
+    /* No wireless adapter on native builds */
+    return FALSE;
+#endif
     if (QL_IS_PLAYBACK_STATE)
         return FALSE;
 

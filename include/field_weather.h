@@ -123,7 +123,7 @@ struct Weather
     u8 loadDroughtPalsOffset;
 };
 
-extern struct Weather *const gWeatherPtr;
+extern struct Weather *gWeatherPtr;
 
 void FadeScreen(u8 mode, s8 delay);
 

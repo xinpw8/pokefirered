@@ -682,7 +682,11 @@ static void Task_PlayCryWhenReleasedFromBall(u8 taskId)
     u8 wantedCry = gTasks[taskId].tCryTaskWantedCry;
     s8 pan = gTasks[taskId].tCryTaskPan;
     u16 species = gTasks[taskId].tCryTaskSpecies;
-    struct Pokemon *mon = (void *)(u32)((gTasks[taskId].tCryTaskMonPtr1 << 16) | (u16)(gTasks[taskId].tCryTaskMonPtr2));
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    struct Pokemon *mon = (struct Pokemon *)HostPtrStore_Get(gTasks[taskId].tCryTaskMonPtr2, gTasks[taskId].tCryTaskMonPtr1);
+#else
+    struct Pokemon *mon = (void *)(uintptr_t)(u32)((gTasks[taskId].tCryTaskMonPtr1 << 16) | (u16)(gTasks[taskId].tCryTaskMonPtr2));
+#endif
 
     switch (gTasks[taskId].tCryTaskState)
     {
@@ -816,8 +820,12 @@ static void SpriteCB_ReleaseMonFromBall(struct Sprite *sprite)
         gTasks[taskId].tCryTaskSpecies = species;
         gTasks[taskId].tCryTaskPan = pan;
         gTasks[taskId].tCryTaskWantedCry = wantedCryCase;
-        gTasks[taskId].tCryTaskMonPtr1 = (u32)(mon) >> 16;
-        gTasks[taskId].tCryTaskMonPtr2 = (u32)(mon);
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+        HostPtrStore_Put(&gTasks[taskId].tCryTaskMonPtr2, &gTasks[taskId].tCryTaskMonPtr1, mon);
+#else
+        gTasks[taskId].tCryTaskMonPtr1 = (u32)(uintptr_t)(mon) >> 16;
+        gTasks[taskId].tCryTaskMonPtr2 = (u32)(uintptr_t)(mon);
+#endif
         gTasks[taskId].tCryTaskState = 0;
     }
 

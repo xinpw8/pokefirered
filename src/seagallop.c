@@ -20,6 +20,8 @@
 
 static EWRAM_DATA void *sBg3TilemapBuffer = NULL;
 
+
+
 static void CB2_SetUpSeagallopScene(void);
 static void VBlankCB_SeaGallop(void);
 static void MainCB2_SeaGallop(void);

@@ -473,6 +473,10 @@ static void CB2_TrainerCard(void)
 
 static void CloseTrainerCard(u8 taskId)
 {
+    sTrainerCardDataPtr->allowDMACopy = FALSE;
+    SetVBlankCallback(NULL);
+    SetHBlankCallback(NULL);
+    ClearDma3Requests();
     SetMainCallback2(sTrainerCardDataPtr->callback2);
     FreeAllWindowBuffers();
     FREE_AND_SET_NULL(sTrainerCardDataPtr);
@@ -1038,6 +1042,7 @@ static void SetUpTrainerCardTask(void)
 {
     ResetTasks();
     ScanlineEffect_Stop();
+    ClearDma3Requests();
     CreateTask(Task_TrainerCard, 0);
     InitTrainerCardData();
     SetDataFromTrainerCard();

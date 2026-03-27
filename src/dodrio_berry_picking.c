@@ -243,6 +243,8 @@ static EWRAM_DATA u16 *sBerryIconSpriteIds[NUM_BERRY_TYPES] = {NULL};
 static EWRAM_DATA struct StatusBar * sStatusBar = NULL;
 static EWRAM_DATA struct DodrioGame_Gfx * sGfx = NULL;
 
+
+
 static bool32 sExitingGame;
 
 static void ResetTasksAndSprites(void);

@@ -7,6 +7,8 @@
 
 static EWRAM_DATA const u8 (*sMovementScripts[OBJECT_EVENTS_COUNT]) = {};
 
+
+
 static void ScriptMovement_StartMoveObjects(u8 priority);
 static u8 GetMoveObjectsTaskId(void);
 static u8 ScriptMovement_TryAddNewMovement(u8 taskId, u8 objEventId, const u8 *movementScript);
@@ -209,6 +211,15 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
         && !ObjectEventClearHeldMovementIfFinished(&gObjectEvents[objEventId]))
         return;
 
+#if HOST_NATIVE
+    // Guard against truncated/invalid pointer from savestate restore or 64-bit bugs.
+    // Valid native pointers on aarch64 non-PIE EXEC are in the range 0x00400000+.
+    if (movementScript == NULL || (uintptr_t)movementScript < 0x10000u)
+    {
+        SetMovementScriptFinished(taskId, moveScrId);
+        return;
+    }
+#endif
     nextMoveActionId = *movementScript;
     if (nextMoveActionId == MOVEMENT_ACTION_STEP_END)
     {

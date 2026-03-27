@@ -1121,7 +1121,10 @@ static void Task_OakSpeech_Init(u8 taskId)
     }
 }
 
+const u8 *gHostLastOakSpeechSource = NULL;
+
 #define OakSpeechPrintMessage(str, speed) ({                                                                                                                 \
+    gHostLastOakSpeechSource = (str);                                                                                                                        \
     DrawDialogueFrame(WIN_INTRO_TEXTBOX, FALSE);                                                                                                             \
     if (str != gStringVar4)                                                                                                                                  \
     {                                                                                                                                                        \

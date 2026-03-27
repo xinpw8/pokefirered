@@ -1952,6 +1952,17 @@ static bool32 CreateSlotMachine(void)
 
 static void DestroySlotMachine(void)
 {
+#ifdef HOST_NATIVE
+    // On GBA, tasks that outlive sSlotMachineState harmlessly read from
+    // address 0 (valid mapped RAM). On 64-bit native, this is SIGSEGV.
+    if (sSlotMachineState != NULL)
+    {
+        if (gTasks[sSlotMachineState->spinReelsTaskId].isActive)
+            DestroyTask(sSlotMachineState->spinReelsTaskId);
+        if (gTasks[sSlotMachineState->taskId].isActive)
+            DestroyTask(sSlotMachineState->taskId);
+    }
+#endif
     if (FuncIsActiveTask(Task_SlotMachine))
     {
         Free(GetSlotMachineSetupTaskDataPtr());

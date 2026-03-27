@@ -10,7 +10,7 @@
 
 #define BATTLER_OFFSET(i) (gHeap + 0x8000 + MON_PIC_SIZE * (i))
 
-const struct SpriteFrameImage gBattlerPicTable_PlayerLeft[] =
+struct SpriteFrameImage gBattlerPicTable_PlayerLeft[] =
 {
     BATTLER_OFFSET(0), MON_PIC_SIZE,
     BATTLER_OFFSET(1), MON_PIC_SIZE,
@@ -18,7 +18,7 @@ const struct SpriteFrameImage gBattlerPicTable_PlayerLeft[] =
     BATTLER_OFFSET(3), MON_PIC_SIZE,
 };
 
-const struct SpriteFrameImage gBattlerPicTable_OpponentLeft[] =
+struct SpriteFrameImage gBattlerPicTable_OpponentLeft[] =
 {
     BATTLER_OFFSET(4), MON_PIC_SIZE,
     BATTLER_OFFSET(5), MON_PIC_SIZE,
@@ -26,7 +26,7 @@ const struct SpriteFrameImage gBattlerPicTable_OpponentLeft[] =
     BATTLER_OFFSET(7), MON_PIC_SIZE,
 };
 
-const struct SpriteFrameImage gBattlerPicTable_PlayerRight[] =
+struct SpriteFrameImage gBattlerPicTable_PlayerRight[] =
 {
     BATTLER_OFFSET(8),  MON_PIC_SIZE,
     BATTLER_OFFSET(9),  MON_PIC_SIZE,
@@ -34,7 +34,7 @@ const struct SpriteFrameImage gBattlerPicTable_PlayerRight[] =
     BATTLER_OFFSET(11), MON_PIC_SIZE,
 };
 
-const struct SpriteFrameImage gBattlerPicTable_OpponentRight[] =
+struct SpriteFrameImage gBattlerPicTable_OpponentRight[] =
 {
     BATTLER_OFFSET(12), MON_PIC_SIZE,
     BATTLER_OFFSET(13), MON_PIC_SIZE,

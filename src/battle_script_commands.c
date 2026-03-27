@@ -3852,6 +3852,9 @@ static void Cmd_playanimation(void)
 
     gActiveBattler = GetBattlerForBattleScript(gBattlescriptCurrInstr[1]);
     argumentPtr = T2_READ_PTR(gBattlescriptCurrInstr + 3);
+    /* HOST_NATIVE: on GBA, NULL (0x0) is readable BIOS ROM. On native,
+     * it segfaults. Battle scripts with no arg default to NULL. */
+    { static const u16 sZeroArg = 0; if (argumentPtr == NULL) argumentPtr = &sZeroArg; }
 
     if (gBattlescriptCurrInstr[2] == B_ANIM_STATS_CHANGE
      || gBattlescriptCurrInstr[2] == B_ANIM_SNATCH_MOVE
@@ -3897,6 +3900,8 @@ static void Cmd_playanimation_var(void)
     gActiveBattler = GetBattlerForBattleScript(gBattlescriptCurrInstr[1]);
     animationIdPtr = T2_READ_PTR(gBattlescriptCurrInstr + 2);
     argumentPtr = T2_READ_PTR(gBattlescriptCurrInstr + 6);
+    { static const u16 sZeroArg2 = 0; if (argumentPtr == NULL) argumentPtr = &sZeroArg2; }
+    { static const u8 sZeroAnimId = 0; if (animationIdPtr == NULL) animationIdPtr = &sZeroAnimId; }
 
     if (*animationIdPtr == B_ANIM_STATS_CHANGE
      || *animationIdPtr == B_ANIM_SNATCH_MOVE

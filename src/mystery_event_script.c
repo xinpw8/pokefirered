@@ -53,7 +53,7 @@ static void InitMysteryEventScript(struct ScriptContext *ctx, u8 *script)
 {
     InitScriptContext(ctx, gMysteryEventScriptCmdTable, gMysteryEventScriptCmdTableEnd);
     SetupBytecodeScript(ctx, script);
-    ctx->data[0] = (u32)script;
+    ctx->data[0] = (uintptr_t)script;
     ctx->data[1] = 0;
     ctx->data[2] = 0;
     ctx->data[3] = 0;

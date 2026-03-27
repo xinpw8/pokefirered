@@ -73,6 +73,8 @@ struct UnionRoomChat
 
 static EWRAM_DATA struct UnionRoomChat * sWork = NULL;
 
+
+
 static void InitChatWork(struct UnionRoomChat * unionRoomChat);
 static void CB2_LoadInterface(void);
 static void VBlankCB_UnionRoomChatMain(void);

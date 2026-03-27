@@ -995,9 +995,21 @@ void CB2_InitCopyrightScreenAfterBootup(void)
         ResetMenuAndMonGlobals();
         Save_ResetSaveCounters();
         LoadGameSave(SAVE_NORMAL);
+#if HOST_NATIVE
+        {
+            extern void HostLogSaveStatus(u8 status);
+            HostLogSaveStatus(gSaveFileStatus);
+        }
+#endif
         if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_INVALID)
             Sav2_ClearSetDefault();
         SetPokemonCryStereo(gSaveBlock2Ptr->optionsSound);
+#if HOST_NATIVE
+        /* Force native defaults for RL consistency */
+        gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_FAST;
+        gSaveBlock2Ptr->optionsBattleSceneOff = TRUE;
+        gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SET;
+#endif
     }
 }
 

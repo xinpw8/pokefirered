@@ -16,6 +16,10 @@ static void Callback_Dummy_ID(void (*callbackId)(void));
 
 void IntrSIO32(void)
 {
+#if HOST_NATIVE
+    /* Serial interrupt handler — never fires on native (no SIO hardware) */
+    (void)0;
+#else
     if (gSTWIStatus->state == 10)
     {
         if (gSTWIStatus->callbackID != NULL)
@@ -28,10 +32,12 @@ void IntrSIO32(void)
         else
             sio32intr_clock_slave();
     }
+#endif
 }
 
 static void sio32intr_clock_master(void)
 {
+#if !HOST_NATIVE
     u32 regSIODATA32;
     u32 ackLen;
 
@@ -149,10 +155,12 @@ static void sio32intr_clock_master(void)
         REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
         REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS | SIO_ENABLE;
     }
+#endif
 }
 
 static void sio32intr_clock_slave(void)
 {
+#if !HOST_NATIVE
     u32 regSIODATA32;
     u32 r0;
     u32 reqLen;
@@ -326,10 +334,15 @@ static void sio32intr_clock_slave(void)
         REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_57600_BPS | SIO_ENABLE;
         REG_IME = 1;
     }
+#endif
 }
 
 static u16 handshake_wait(u16 slot)
 {
+#if HOST_NATIVE
+    (void)slot;
+    return 0;
+#else
     do
     {
         if ((gSTWIStatus->timerActive & 0xFF) == 1)
@@ -339,10 +352,20 @@ static u16 handshake_wait(u16 slot)
         }
     } while ((REG_SIOCNT & SIO_MULTI_SI) != (slot << SIO_MULTI_SI_SHIFT));
     return 0;
+#endif
 }
 
 static void STWI_set_timer_in_RAM(u8 count)
 {
+#if HOST_NATIVE
+    switch (count)
+    {
+    case 50:  gSTWIStatus->timerState = 1; break;
+    case 80:  gSTWIStatus->timerState = 2; break;
+    case 100: gSTWIStatus->timerState = 3; break;
+    case 130: gSTWIStatus->timerState = 4; break;
+    }
+#else
     vu16* regTMCNTL = (vu16*)(REG_ADDR_TMCNT_L + gSTWIStatus->timerSelect * 4);
     vu16* regTMCNTH = (vu16*)(REG_ADDR_TMCNT_H + gSTWIStatus->timerSelect * 4);
     REG_IME = 0;
@@ -368,13 +391,16 @@ static void STWI_set_timer_in_RAM(u8 count)
     *regTMCNTH = TIMER_ENABLE | TIMER_64CLK | TIMER_256CLK | TIMER_INTR_ENABLE;
     REG_IF = INTR_FLAG_TIMER0 << gSTWIStatus->timerSelect;
     REG_IME = 1;
+#endif
 }
 
 static void STWI_stop_timer_in_RAM(void)
 {
     gSTWIStatus->timerState = 0;
+#if !HOST_NATIVE
     REG_TMCNT_L(gSTWIStatus->timerSelect) = 0;
     REG_TMCNT_H(gSTWIStatus->timerSelect) = 0;
+#endif
 }
 
 static void STWI_init_slave(void)
@@ -391,7 +417,9 @@ static void STWI_init_slave(void)
     gSTWIStatus->timerActive = 0;
     gSTWIStatus->error = 0;
     gSTWIStatus->recoveryCount = 0;
+#if !HOST_NATIVE
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_57600_BPS | SIO_ENABLE;
+#endif
 }
 
 #if HOST_NATIVE

@@ -108,13 +108,32 @@
 // Use unsigned casts to prevent sign-extension when casting the result to a pointer
 // on 64-bit native builds (important for HOST_NATIVE where pointers are 8 bytes).
 #define T1_READ_32(ptr) ((u32)(ptr)[0] | ((u32)(ptr)[1] << 8) | ((u32)(ptr)[2] << 16) | ((u32)(ptr)[3] << 24))
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+/* 64-bit native: script bytecode stores 32-bit indices into a pointer table.
+ * HostScriptPtrLookup resolves the index to the real 64-bit address. */
+extern const u8 *HostScriptPtrLookup(u32 index);
+#define T1_READ_PTR(ptr) (HostScriptPtrLookup(T1_READ_32(ptr)))
+#else
 #define T1_READ_PTR(ptr) ((u8 *)(uintptr_t)T1_READ_32(ptr))
+#endif
 
 // T2_READ_8 is a duplicate to remain consistent with each group.
 #define T2_READ_8(ptr)  ((ptr)[0])
 #define T2_READ_16(ptr) ((ptr)[0] + ((ptr)[1] << 8))
 #define T2_READ_32(ptr) ((u32)(ptr)[0] + ((u32)(ptr)[1] << 8) + ((u32)(ptr)[2] << 16) + ((u32)(ptr)[3] << 24))
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+#define T2_READ_PTR(ptr) ((void *)HostScriptPtrLookup(T2_READ_32(ptr)))
+#else
 #define T2_READ_PTR(ptr) ((void *)(uintptr_t)T2_READ_32(ptr))
+#endif
+
+// Side table for storing 64-bit pointers in s16 pairs (task/sprite data).
+// On GBA, pointers fit in 32 bits (two s16). On 64-bit native they don't.
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+extern void HostPtrStore_Put(s16 *lo, s16 *hi, const void *ptr);
+extern void *HostPtrStore_Get(s16 lo, s16 hi);
+extern void HostPtrStore_Reset(void);
+#endif
 
 // This macro is required to prevent the compiler from optimizing
 // a dpad up/down check in sub_812CAD8 (fame_checker.c).

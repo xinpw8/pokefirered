@@ -1,7 +1,4 @@
 #include "librfu.h"
-#if HOST_NATIVE
-#include <stdio.h>
-#endif
 
 static void STWI_intr_timer(void);
 static u16 STWI_init(u8 request);
@@ -52,8 +49,10 @@ void STWI_init_all(struct RfuIntrStruct *interruptStruct, IntrFunc *interrupt, b
     gSTWIStatus->error = 0;
     gSTWIStatus->recoveryCount = 0;
     gSTWIStatus->sending = 0;
+#if !HOST_NATIVE
     REG_RCNT = 0x100; // TODO: mystery bit?
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
+#endif
     STWI_init_Callback_M();
     STWI_init_Callback_S();
     IntrEnable(INTR_FLAG_SERIAL);
@@ -73,6 +72,7 @@ void STWI_init_timer(IntrFunc *interrupt, s32 timerSelect)
 
 void AgbRFU_SoftReset(void)
 {
+#if !HOST_NATIVE
     vu16 *timerL;
     vu16 *timerH;
 
@@ -83,26 +83,12 @@ void AgbRFU_SoftReset(void)
     *timerH = 0;
     *timerL = 0;
     *timerH = TIMER_ENABLE | TIMER_1024CLK;
-#if HOST_NATIVE
-    {
-        u32 timeout = 0;
-        while (*timerL <= 0x11)
-        {
-            REG_RCNT = 0x80A2;
-            if (++timeout > 1000000)
-            {
-                fprintf(stderr, "pfr_play: AgbRFU_SoftReset timeout (timer stuck)\n");
-                break;
-            }
-        }
-    }
-#else
     while (*timerL <= 0x11)
         REG_RCNT = 0x80A2;
-#endif
     *timerH = 3;
     REG_RCNT = 0x80A0;
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
+#endif
     gSTWIStatus->state = 0; // master send req
     gSTWIStatus->reqLength = 0;
     gSTWIStatus->reqNext = 0;
@@ -169,18 +155,8 @@ void STWI_set_Callback_ID(void (*func)(void)) // name in SDK, but is actually se
 u16 STWI_poll_CommandEnd(void)
 {
 #if HOST_NATIVE
-    {
-        u32 timeout = 0;
-        while (gSTWIStatus->sending == 1)
-        {
-            if (++timeout > 1000000)
-            {
-                fprintf(stderr, "pfr_play: STWI_poll_CommandEnd timeout (sending stuck)\n");
-                gSTWIStatus->sending = 0;
-                break;
-            }
-        }
-    }
+    /* STWI_start_Command completes immediately on native, so sending
+     * is always 0 here.  No spin needed. */
 #else
     while (gSTWIStatus->sending == 1)
         ;
@@ -552,6 +528,15 @@ static void STWI_intr_timer(void)
 
 static void STWI_set_timer(u8 count)
 {
+#if HOST_NATIVE
+    switch (count)
+    {
+    case 50:  gSTWIStatus->timerState = 1; break;
+    case 80:  gSTWIStatus->timerState = 2; break;
+    case 100: gSTWIStatus->timerState = 3; break;
+    case 130: gSTWIStatus->timerState = 4; break;
+    }
+#else
     vu16 *timerL = &REG_TMCNT_L(gSTWIStatus->timerSelect);
     vu16 *timerH = &REG_TMCNT_H(gSTWIStatus->timerSelect);
     REG_IME = 0;
@@ -577,13 +562,16 @@ static void STWI_set_timer(u8 count)
     *timerH = TIMER_ENABLE | TIMER_INTR_ENABLE | TIMER_1024CLK;
     REG_IF = INTR_FLAG_TIMER0 << gSTWIStatus->timerSelect;
     REG_IME = 1;
+#endif
 }
 
 static void STWI_stop_timer(void)
 {
     gSTWIStatus->timerState = 0;
+#if !HOST_NATIVE
     REG_TMCNT_L(gSTWIStatus->timerSelect) = 0;
     REG_TMCNT_H(gSTWIStatus->timerSelect) = 0;
+#endif
 }
 
 /*
@@ -591,6 +579,7 @@ static void STWI_stop_timer(void)
  */
 static u16 STWI_init(u8 request)
 {
+#if !HOST_NATIVE
     if (!REG_IME)
     {
         // Can't start sending if IME is disabled.
@@ -599,7 +588,9 @@ static u16 STWI_init(u8 request)
             gSTWIStatus->callbackM(request, gSTWIStatus->error);
         return TRUE;
     }
-    else if (gSTWIStatus->sending == 1)
+    else
+#endif
+    if (gSTWIStatus->sending == 1)
     {
         // Already sending something. Cancel and error.
         gSTWIStatus->error = ERR_REQ_CMD_SENDING;
@@ -631,17 +622,30 @@ static u16 STWI_init(u8 request)
         gSTWIStatus->timerActive = 0;
         gSTWIStatus->error = 0;
         gSTWIStatus->recoveryCount = 0;
+#if !HOST_NATIVE
         REG_RCNT = 0x100;
         REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
+#endif
         return FALSE;
     }
 }
 
 static s32 STWI_start_Command(void)
 {
+#if HOST_NATIVE
+    /* No serial hardware — prepare packet header, then complete immediately.
+     * Without this, the command would wait forever for a serial transfer
+     * that never completes (no wireless adapter on native). */
+    *(u32 *)gSTWIStatus->txPacket->rfuPacket8.data = 0x99660000 | (gSTWIStatus->reqLength << 8) | gSTWIStatus->reqActiveCommand;
+    gSTWIStatus->sending = 0;
+    gSTWIStatus->error = 0;
+    if (gSTWIStatus->callbackM != NULL)
+        gSTWIStatus->callbackM(gSTWIStatus->reqActiveCommand, 0);
+    return 0;
+#else
     u16 imeTemp;
 
-    // equivalent to gSTWIStatus->txPacket->rfuPacket32.command, 
+    // equivalent to gSTWIStatus->txPacket->rfuPacket32.command,
     // but the cast here is required to avoid register issue
     *(u32 *)gSTWIStatus->txPacket->rfuPacket8.data = 0x99660000 | (gSTWIStatus->reqLength << 8) | gSTWIStatus->reqActiveCommand;
     REG_SIODATA32 = gSTWIStatus->txPacket->rfuPacket32.command;
@@ -654,6 +658,7 @@ static s32 STWI_start_Command(void)
     REG_IME = imeTemp;
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_MULTI_BUSY | SIO_115200_BPS;
     return 0;
+#endif
 }
 
 static s32 STWI_restart_Command(void)
@@ -689,9 +694,11 @@ static s32 STWI_reset_ClockCounter(void)
     gSTWIStatus->state = 5; // slave receive req init
     gSTWIStatus->reqLength = 0;
     gSTWIStatus->reqNext = 0;
+#if !HOST_NATIVE
     REG_SIODATA32 = (1 << 31);
     REG_SIOCNT = 0;
     REG_SIOCNT = SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS;
     REG_SIOCNT = (SIO_INTR_ENABLE | SIO_32BIT_MODE | SIO_115200_BPS) + 0x7F;
+#endif
     return 0;
 }

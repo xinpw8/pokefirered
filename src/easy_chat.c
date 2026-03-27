@@ -34,6 +34,9 @@ static u16 GetUnlockedWordsInAlphabeticalGroup(u16);
 static bool8 UnlockedECMonOrMove(u16, u8);
 static bool32 EC_IsDeoxys(u16 species);
 static bool8 IsWordUnlocked(u16 word);
+static bool8 EasyChatWordUsesDirectGameString(u8 groupId);
+static u8 *CopyEasyChatWordText(u8 *dest, u8 groupId, const u8 *src);
+static u16 GetEasyChatWordTextLength(u8 groupId, const u8 *src);
 
 #include "data/easy_chat/easy_chat_groups.h"
 #include "data/easy_chat/easy_chat_words_by_letter.h"
@@ -81,6 +84,10 @@ static const u16 sDefaultBattleStartWords[] = {
 
 static const u16 sDeoxysValue[] = {
     SPECIES_DEOXYS,
+};
+
+static const u8 sEasyChatWordPokeBlock[] = {
+    CHAR_PO, CHAR_KE, CHAR_BLOCK_1, CHAR_BLOCK_2, CHAR_BLOCK_3, EOS
 };
 
 static bool8 IsECGroupUnlocked(u8 groupId)
@@ -148,6 +155,20 @@ static bool8 IsECWordInvalid(u16 easyChatWord)
     }
 }
 
+static bool8 EasyChatWordUsesDirectGameString(u8 groupId)
+{
+    switch (groupId)
+    {
+    case EC_GROUP_POKEMON:
+    case EC_GROUP_POKEMON_2:
+    case EC_GROUP_MOVE_1:
+    case EC_GROUP_MOVE_2:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
 static const u8 *GetEasyChatWord(u8 groupId, u16 index)
 {
     switch (groupId)
@@ -163,6 +184,111 @@ static const u8 *GetEasyChatWord(u8 groupId, u16 index)
     }
 }
 
+static u8 ConvertEasyChatAsciiChar(u8 c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return CHAR_A + (c - 'A');
+
+    switch (c)
+    {
+    case ' ':
+        return CHAR_SPACE;
+    case '!':
+        return CHAR_EXCL_MARK;
+    case '\'':
+        return CHAR_SGL_QUOTE_RIGHT;
+    case ',':
+        return CHAR_COMMA;
+    case '-':
+        return CHAR_HYPHEN;
+    case '.':
+        return CHAR_PERIOD;
+    case '1':
+        return CHAR_1;
+    case '?':
+        return CHAR_QUESTION_MARK;
+    default:
+        return c;
+    }
+}
+
+static bool8 MatchEasyChatUtf8Token(const u8 *src, const char *token)
+{
+    return strncmp((const char *)src, token, strlen(token)) == 0;
+}
+
+static u8 *CopyEasyChatWordText(u8 *dest, u8 groupId, const u8 *src)
+{
+    if (EasyChatWordUsesDirectGameString(groupId))
+        return StringCopy(dest, src);
+
+    while (*src != '\0')
+    {
+        if (MatchEasyChatUtf8Token(src, "{POKEBLOCK}"))
+        {
+            dest = StringCopy(dest, sEasyChatWordPokeBlock);
+            src += strlen("{POKEBLOCK}");
+            continue;
+        }
+
+        if (MatchEasyChatUtf8Token(src, "\xC3\xA9"))
+        {
+            *dest++ = CHAR_e_ACUTE;
+            src += 2;
+            continue;
+        }
+
+        if (MatchEasyChatUtf8Token(src, "\xE2\x80\xA6"))
+        {
+            *dest++ = CHAR_ELLIPSIS;
+            src += 3;
+            continue;
+        }
+
+        *dest++ = ConvertEasyChatAsciiChar(*src++);
+    }
+
+    *dest = EOS;
+    return dest;
+}
+
+static u16 GetEasyChatWordTextLength(u8 groupId, const u8 *src)
+{
+    u16 length = 0;
+
+    if (EasyChatWordUsesDirectGameString(groupId))
+        return StringLength(src);
+
+    while (*src != '\0')
+    {
+        if (MatchEasyChatUtf8Token(src, "{POKEBLOCK}"))
+        {
+            length += 5;
+            src += strlen("{POKEBLOCK}");
+            continue;
+        }
+
+        if (MatchEasyChatUtf8Token(src, "\xC3\xA9"))
+        {
+            length++;
+            src += 2;
+            continue;
+        }
+
+        if (MatchEasyChatUtf8Token(src, "\xE2\x80\xA6"))
+        {
+            length++;
+            src += 3;
+            continue;
+        }
+
+        length++;
+        src++;
+    }
+
+    return length;
+}
+
 u8 *CopyEasyChatWord(u8 *dest, u16 easyChatWord)
 {
     u8 *resultStr;
@@ -174,7 +300,7 @@ u8 *CopyEasyChatWord(u8 *dest, u16 easyChatWord)
     {
         u16 index = EC_INDEX(easyChatWord);
         u8 groupId = EC_GROUP(easyChatWord);
-        resultStr = StringCopy(dest, GetEasyChatWord(groupId, index));
+        resultStr = CopyEasyChatWordText(dest, groupId, GetEasyChatWord(groupId, index));
     }
     else
     {
@@ -227,7 +353,7 @@ static u16 GetEasyChatWordStringLength(u16 easyChatWord)
     {
         u16 index = EC_INDEX(easyChatWord);
         u8 groupId = EC_GROUP(easyChatWord);
-        return StringLength(GetEasyChatWord(groupId, index));
+        return GetEasyChatWordTextLength(groupId, GetEasyChatWord(groupId, index));
     }
 }
 

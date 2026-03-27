@@ -266,10 +266,13 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
         }
     }
 
-    if (input->pressedAButton && TryStartInteractionScript(&position, metatileBehavior, playerDirection) == TRUE)
+    if (input->pressedAButton)
     {
-        gFieldInputRecord.pressedAButton = TRUE;
-        return TRUE;
+        if (TryStartInteractionScript(&position, metatileBehavior, playerDirection) == TRUE)
+        {
+            gFieldInputRecord.pressedAButton = TRUE;
+            return TRUE;
+        }
     }
 
     if (input->heldDirection2 && input->dpadDirection == playerDirection)

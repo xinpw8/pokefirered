@@ -205,6 +205,8 @@ EWRAM_DATA u16 gUnionRoomOfferedSpecies = SPECIES_NONE;
 EWRAM_DATA u8 gUnionRoomRequestedMonType = TYPE_NORMAL;
 static EWRAM_DATA struct UnionRoomTrade sUnionRoomTrade = {};
 
+
+
 static struct WirelessLink_Leader * sLeader;
 static struct WirelessLink_Group * sGroup;
 static struct WirelessLink_URoom * sURoom;

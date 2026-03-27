@@ -302,7 +302,8 @@ void CreateMovingMonIcon(void)
     u8 priority = GetMonIconPriorityByCursorArea();
 
     gStorage->movingMonSprite = CreateMonIconSprite(species, personality, 0, 0, priority, 7);
-    gStorage->movingMonSprite->callback = SpriteCB_HeldMon;
+    if (gStorage->movingMonSprite != NULL)
+        gStorage->movingMonSprite->callback = SpriteCB_HeldMon;
 }
 
 static void InitBoxMonSprites(u8 boxId)
@@ -336,7 +337,11 @@ static void InitBoxMonSprites(u8 boxId)
     {
         for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
         {
-            if (GetBoxMonDataAt(boxId, boxPosition, MON_DATA_HELD_ITEM) == 0)
+            // Empty box slots leave the sprite pointer NULL. The GBA BIOS
+            // tolerates the resulting null write, but native builds must
+            // guard it explicitly.
+            if (gStorage->boxMonsSprites[boxPosition] != NULL
+             && GetBoxMonDataAt(boxId, boxPosition, MON_DATA_HELD_ITEM) == 0)
                 gStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
         }
     }
@@ -353,7 +358,8 @@ void CreateBoxMonIconAtPos(u8 boxPosition)
         u32 personality = GetCurrentBoxMonData(boxPosition, MON_DATA_PERSONALITY);
 
         gStorage->boxMonsSprites[boxPosition] = CreateMonIconSprite(species, personality, x, y, 2, 19 - (boxPosition % IN_BOX_COLUMNS));
-        if (gStorage->boxOption == OPTION_MOVE_ITEMS)
+        if (gStorage->boxOption == OPTION_MOVE_ITEMS
+         && gStorage->boxMonsSprites[boxPosition] != NULL)
             gStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
     }
 }
@@ -791,6 +797,9 @@ void SetMovingMonSprite(u8 mode, u8 id)
     else
         return;
 
+    if (gStorage->movingMonSprite == NULL)
+        return;
+
     gStorage->movingMonSprite->callback = SpriteCB_HeldMon;
     gStorage->movingMonSprite->oam.priority = GetMonIconPriorityByCursorArea();
     gStorage->movingMonSprite->subpriority = 7;
@@ -801,16 +810,23 @@ void SetPlacedMonSprite(u8 boxId, u8 position)
     if (boxId == TOTAL_BOXES_COUNT) // party mon
     {
         gStorage->partySprites[position] = gStorage->movingMonSprite;
-        gStorage->partySprites[position]->oam.priority = 1;
-        gStorage->partySprites[position]->subpriority = 12;
+        if (gStorage->partySprites[position] != NULL)
+        {
+            gStorage->partySprites[position]->oam.priority = 1;
+            gStorage->partySprites[position]->subpriority = 12;
+        }
     }
     else
     {
         gStorage->boxMonsSprites[position] = gStorage->movingMonSprite;
-        gStorage->boxMonsSprites[position]->oam.priority = 2;
-        gStorage->boxMonsSprites[position]->subpriority = 19 - (position % IN_BOX_COLUMNS);
+        if (gStorage->boxMonsSprites[position] != NULL)
+        {
+            gStorage->boxMonsSprites[position]->oam.priority = 2;
+            gStorage->boxMonsSprites[position]->subpriority = 19 - (position % IN_BOX_COLUMNS);
+        }
     }
-    gStorage->movingMonSprite->callback = SpriteCallbackDummy;
+    if (gStorage->movingMonSprite != NULL)
+        gStorage->movingMonSprite->callback = SpriteCallbackDummy;
     gStorage->movingMonSprite = NULL;
 }
 
@@ -821,12 +837,18 @@ void SetShiftMonSpritePtr(u8 boxId, u8 position)
     else
         gStorage->shiftMonSpritePtr = &gStorage->boxMonsSprites[position];
 
-    gStorage->movingMonSprite->callback = SpriteCallbackDummy;
+    if (gStorage->movingMonSprite != NULL)
+        gStorage->movingMonSprite->callback = SpriteCallbackDummy;
     gStorage->shiftTimer = 0;
 }
 
 bool8 ShiftMons(void)
 {
+    if (gStorage->movingMonSprite == NULL
+     || gStorage->shiftMonSpritePtr == NULL
+     || *gStorage->shiftMonSpritePtr == NULL)
+        return FALSE;
+
     if (gStorage->shiftTimer == 16)
         return FALSE;
 
@@ -929,11 +951,15 @@ bool8 ResetReleaseMonSpritePtr(void)
 
 void SetMovingMonPriority(u8 priority)
 {
-    gStorage->movingMonSprite->oam.priority = priority;
+    if (gStorage->movingMonSprite != NULL)
+        gStorage->movingMonSprite->oam.priority = priority;
 }
 
 static void SpriteCB_HeldMon(struct Sprite *sprite)
 {
+    if (gStorage->cursorSprite == NULL)
+        return;
+
     sprite->x = gStorage->cursorSprite->x;
     sprite->y = gStorage->cursorSprite->y + gStorage->cursorSprite->y2 + 4;
 }

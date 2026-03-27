@@ -18,6 +18,8 @@ static EWRAM_DATA u8 sUnused = 0; // Debug? Never read
 EWRAM_DATA struct UnusedControllerStruct gUnusedControllerStruct = {}; // Debug? Unused code that writes to it, never read
 static EWRAM_DATA u8 sBattleBuffersTransferData[0x100] = {};
 
+
+
 static void CreateTasksForSendRecvLinkBuffers(void);
 static void InitLinkBtlControllers(void);
 static void InitSinglePlayerBtlControllers(void);
@@ -1017,11 +1019,20 @@ void BtlController_EmitTwoReturnValues(u8 bufferId, u8 ret8, u16 ret16)
 void BtlController_EmitChosenMonReturnValue(u8 bufferId, u8 partyId, u8 *battlePartyOrder)
 {
     s32 i;
+    const u8 *partyOrder = battlePartyOrder;
+
+    if (partyOrder == NULL)
+    {
+        if (gBattleStruct != NULL)
+            partyOrder = gBattleStruct->battlerPartyOrders[gActiveBattler];
+        else
+            partyOrder = gBattlePartyCurrentOrder;
+    }
 
     sBattleBuffersTransferData[0] = CONTROLLER_CHOSENMONRETURNVALUE;
     sBattleBuffersTransferData[1] = partyId;
     for (i = 0; i < (int)ARRAY_COUNT(gBattlePartyCurrentOrder); i++)
-        sBattleBuffersTransferData[2 + i] = battlePartyOrder[i];
+        sBattleBuffersTransferData[2 + i] = partyOrder[i];
     PrepareBufferDataTransfer(bufferId, sBattleBuffersTransferData, 5);
 }
 

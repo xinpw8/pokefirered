@@ -53,6 +53,8 @@ struct TeachyTvBuf
 static EWRAM_DATA struct TeachyTvCtrlBlk sStaticResources = {0};
 static EWRAM_DATA struct TeachyTvBuf * sResources = NULL;
 
+
+
 static void TTVcmd_TransitionRenderBg2TeachyTvGraphicInitNpcPos(u8 taskId);
 static void TTVcmd_ClearBg2TeachyTvGraphic(u8 taskId);
 static void TTVcmd_NpcMoveAndSetupTextPrinter(u8 taskId);

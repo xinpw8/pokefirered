@@ -74,7 +74,7 @@ static const struct BgTemplate sBgTemplates[2] = {
     }
 };
 
-static u8 *const sStringVars[3] = {
+static u8 * sStringVars[3] = {
     gStringVar1,
     gStringVar2,
     gStringVar3

@@ -80,7 +80,11 @@ void FillWindowPixelBuffer(u8 windowId, u8 fillValue);
 void ScrollWindow(u8 windowId, u8 direction, u8 distance, u8 fillValue);
 void CallWindowFunction(u8 windowId, WindowFunc func);
 bool8 SetWindowAttribute(u8 windowId, u8 attributeId, u32 value);
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+uintptr_t GetWindowAttribute(u8 windowId, u8 attributeId);
+#else
 u32 GetWindowAttribute(u8 windowId, u8 attributeId);
+#endif
 u16 AddWindow8Bit(const struct WindowTemplate *template);
 void FillWindowPixelBuffer8Bit(u8 windowId, u8 fillValue);
 void FillWindowPixelRect8Bit(u8 windowId, u8 fillValue, u16 x, u16 y, u16 width, u16 height);

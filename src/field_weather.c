@@ -63,7 +63,7 @@ static void DoNothing(void);
 static void ApplyFogBlend(u8 blendCoeff, u16 blendColor);
 static bool8 LightenSpritePaletteInFog(u8 paletteIndex);
 
-struct Weather *const gWeatherPtr = &sWeather;
+struct Weather *gWeatherPtr = NULL; /* initialized at runtime by StartWeather */
 
 static const struct WeatherCallbacks sWeatherFuncs[] = {
     {None_Init, None_Main, None_Init, None_Finish},
@@ -143,6 +143,8 @@ const u8 gWeatherSandstormTiles[] = INCBIN_U8("graphics/weather/sandstorm.4bpp")
 // code
 void StartWeather(void)
 {
+    if (gWeatherPtr == NULL)
+        gWeatherPtr = &sWeather;
     if (!FuncIsActiveTask(Task_WeatherMain))
     {
         u8 index = AllocSpritePalette(0x1200);

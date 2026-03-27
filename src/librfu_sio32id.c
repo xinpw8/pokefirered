@@ -1,7 +1,4 @@
 #include "librfu.h"
-#if HOST_NATIVE
-#include <stdio.h>
-#endif
 
 static void Sio32IDIntr(void);
 static void Sio32IDInit(void);
@@ -25,6 +22,11 @@ static const char Sio32IDLib_Var[] = "Sio32ID_030820";
 
 s32 AgbRFU_checkID(u8 maxTries)
 {
+#if HOST_NATIVE
+    /* No wireless adapter on native — return 0 (no ID found) */
+    (void)maxTries;
+    return 0;
+#else
     u16 ieBak;
     vu16 *regTMCNTL;
     s32 id;
@@ -46,22 +48,8 @@ s32 AgbRFU_checkID(u8 maxTries)
         regTMCNTL[1] = 0;
         regTMCNTL[0] = 0;
         regTMCNTL[1] = TIMER_1024CLK | TIMER_ENABLE;
-#if HOST_NATIVE
-        {
-            u32 timeout = 0;
-            while (regTMCNTL[0] < 32)
-            {
-                if (++timeout > 1000000)
-                {
-                    fprintf(stderr, "pfr_play: AgbRFU_checkID timeout (timer stuck)\n");
-                    break;
-                }
-            }
-        }
-#else
         while (regTMCNTL[0] < 32)
             ;
-#endif
         regTMCNTL[1] = 0;
         regTMCNTL[0] = 0;
     }
@@ -71,10 +59,12 @@ s32 AgbRFU_checkID(u8 maxTries)
     gSTWIStatus->state = 0;
     STWI_set_Callback_ID(NULL);
     return id;
+#endif
 }
 
 static void Sio32IDInit(void)
 {
+#if !HOST_NATIVE
     REG_IME = 0;
     REG_IE &= ~((8 << gSTWIStatus->timerSelect) | INTR_FLAG_SERIAL);
     REG_IME = 1;
@@ -83,10 +73,14 @@ static void Sio32IDInit(void)
     REG_SIOCNT |= SIO_INTR_ENABLE | SIO_ENABLE;
     CpuFill32(0, &gRfuSIO32Id, sizeof(struct RfuSIO32Id));
     REG_IF = INTR_FLAG_SERIAL;
+#endif
 }
 
 static s32 Sio32IDMain(void)
 {
+#if HOST_NATIVE
+    return 0;
+#else
     switch (gRfuSIO32Id.state)
     {
     case 0:
@@ -134,10 +128,12 @@ static s32 Sio32IDMain(void)
         return gRfuSIO32Id.lastId;
     }
     return 0;
+#endif
 }
 
 static void Sio32IDIntr(void)
 {
+#if !HOST_NATIVE
     u32 regSIODATA32;
     u16 delay;
     u32 rfuSIO32IdUnk0_times_16;
@@ -184,4 +180,5 @@ static void Sio32IDIntr(void)
         if (gRfuSIO32Id.lastId == 0)
             REG_SIOCNT |= SIO_ENABLE;
     }
+#endif
 }

@@ -71,6 +71,8 @@ static EWRAM_DATA u8 sContextMenuNumOptions = 0;
 static ALIGNED(4) EWRAM_DATA u8 sVariableWindowIds[14] = {};
 static ALIGNED(4) EWRAM_DATA u8 sBerryPouchSpriteId = 0;
 
+
+
 static void CB2_InitBerryPouch(void);
 static bool8 RunBerryPouchInit(void);
 static void AbortBerryPouchLoading(void);

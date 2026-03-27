@@ -868,17 +868,26 @@ void ResetAllSprites(void)
 
 void FreeSpriteTiles(struct Sprite *sprite)
 {
+    if (sprite == NULL || sprite->template == NULL)
+        return;
+
     if (sprite->template->tileTag != TAG_NONE)
         FreeSpriteTilesByTag(sprite->template->tileTag);
 }
 
 void FreeSpritePalette(struct Sprite *sprite)
 {
+    if (sprite == NULL || sprite->template == NULL)
+        return;
+
     FreeSpritePaletteByTag(sprite->template->paletteTag);
 }
 
 void FreeSpriteOamMatrix(struct Sprite *sprite)
 {
+    if (sprite == NULL)
+        return;
+
     if (sprite->oam.affineMode & ST_OAM_AFFINE_ON_MASK)
     {
         FreeOamMatrix(sprite->oam.matrixNum);
@@ -888,6 +897,9 @@ void FreeSpriteOamMatrix(struct Sprite *sprite)
 
 void DestroySpriteAndFreeResources(struct Sprite *sprite)
 {
+    if (sprite == NULL)
+        return;
+
     FreeSpriteTiles(sprite);
     FreeSpritePalette(sprite);
     FreeSpriteOamMatrix(sprite);

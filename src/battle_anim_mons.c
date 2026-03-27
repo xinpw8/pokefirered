@@ -28,6 +28,8 @@ static void AnimWeatherBallUp_Step(struct Sprite *sprite);
 static EWRAM_DATA union AffineAnimCmd *sAnimTaskAffineAnim = NULL;
 static EWRAM_DATA u32 sUnused = 0;
 
+
+
 static const struct UCoords8 sBattlerCoords[][MAX_BATTLERS_COUNT] =
 {
     { // Single battle
@@ -376,15 +378,23 @@ u8 GetAnimBattlerSpriteId(u8 animBattler)
 
 void StoreSpriteCallbackInData6(struct Sprite *sprite, SpriteCallback callback)
 {
-    sprite->data[6] = (u32)(callback) & 0xFFFF;
-    sprite->data[7] = (u32)(callback) >> 16;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    HostPtrStore_Put(&sprite->data[6], &sprite->data[7], (const void *)callback);
+#else
+    sprite->data[6] = (u32)(uintptr_t)(callback) & 0xFFFF;
+    sprite->data[7] = (u32)(uintptr_t)(callback) >> 16;
+#endif
 }
 
 static void SetCallbackToStoredInData6(struct Sprite *sprite)
 {
-    u32 callback = (u16)sprite->data[6] | (sprite->data[7] << 16);
-    
-    sprite->callback = (SpriteCallback)callback;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    sprite->callback = (SpriteCallback)HostPtrStore_Get(sprite->data[6], sprite->data[7]);
+#else
+    u32 callbackWord = (u16)sprite->data[6] | (sprite->data[7] << 16);
+
+    sprite->callback = (SpriteCallback)(uintptr_t)callbackWord;
+#endif
 }
 
 // Sprite data for TranslateSpriteInCircle/Ellipse and related
@@ -1819,13 +1829,21 @@ static u16 GetBattlerYDeltaFromSpriteId(u8 spriteId)
 
 void StorePointerInVars(s16 *lo, s16 *hi, const void *ptr)
 {
-    *lo = ((intptr_t)ptr) & 0xffff;
-    *hi = (((intptr_t)ptr) >> 16) & 0xffff;
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    HostPtrStore_Put(lo, hi, ptr);
+#else
+    *lo = ((uintptr_t)ptr) & 0xffff;
+    *hi = (((uintptr_t)ptr) >> 16) & 0xffff;
+#endif
 }
 
 void *LoadPointerFromVars(s16 lo, s16 hi)
 {
-    return (void *)((u16)lo | ((u16)hi << 16));
+#if HOST_NATIVE && __SIZEOF_POINTER__ == 8
+    return HostPtrStore_Get(lo, hi);
+#else
+    return (void *)(uintptr_t)(u32)((u16)lo | ((u16)hi << 16));
+#endif
 }
 
 void BattleAnimHelper_SetSpriteSquashParams(struct Task *task, u8 spriteId, s16 xScaleStart, s16 yScaleStart, s16 xScaleEnd, s16 yScaleEnd, u16 duration)

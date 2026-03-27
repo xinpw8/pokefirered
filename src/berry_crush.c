@@ -344,6 +344,8 @@ struct BerryCrushGame
 
 static EWRAM_DATA struct BerryCrushGame *sGame = NULL;
 
+
+
 static void SetNamesAndTextSpeed(struct BerryCrushGame *game);
 static void GetBerryFromBag(void);
 static void VBlankCB(void);

@@ -578,7 +578,7 @@ bool8 LoadEasyChatGraphics(void)
         DeactivateAllTextPrinters();
         LoadEasyChatPals();
         SetGpuRegsForEasyChatInit();
-        CpuFastFill(0, (void *)VRAM + 0x1000000, 0x400);
+        CpuFastFill(0, (void *)OAM, 0x400);
         break;
     case 1:
         DecompressAndLoadBgGfxUsingHeap(3, gEasyChatWindow_Gfx, 0, 0, 0);
