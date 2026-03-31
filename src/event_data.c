@@ -186,6 +186,17 @@ bool32 CanResetRTC(void)
 u16 *GetVarPointer(u16 idx)
 {
     u16 *ptr;
+#if HOST_NATIVE
+    {
+        extern struct SaveBlock1 gSaveBlock1;
+        extern void HostLogPrintf(const char *fmt, ...);
+        if (gSaveBlock1Ptr != &gSaveBlock1) {
+            HostLogPrintf("[RESEAT] gSaveBlock1Ptr was %p, expected %p\n",
+                          (void *)gSaveBlock1Ptr, (void *)&gSaveBlock1);
+            gSaveBlock1Ptr = &gSaveBlock1;
+        }
+    }
+#endif
     if (idx < VARS_START)
         return NULL;
     if (idx < SPECIAL_VARS_START)
