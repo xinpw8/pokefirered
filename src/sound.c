@@ -249,7 +249,6 @@ void PlayFanfare(u16 songNum)
 
 bool8 IsFanfareTaskInactive(void)
 {
-    if (gHostNoAudio) return TRUE;
     if (FuncIsActiveTask(Task_Fanfare) == TRUE)
         return FALSE;
     return TRUE;
@@ -313,7 +312,6 @@ void FadeOutBGM(u8 speed)
 
 bool8 IsBGMStopped(void)
 {
-    if (gHostNoAudio) return TRUE;
     if (!(gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_TRACK))
         return TRUE;
     return FALSE;
@@ -614,7 +612,6 @@ void SE12PanpotControl(s8 pan)
 
 bool8 IsSEPlaying(void)
 {
-    if (gHostNoAudio) return FALSE;
     if ((gMPlayInfo_SE1.status & MUSICPLAYER_STATUS_PAUSE) && (gMPlayInfo_SE2.status & MUSICPLAYER_STATUS_PAUSE))
         return FALSE;
     if (!(gMPlayInfo_SE1.status & MUSICPLAYER_STATUS_TRACK) && !(gMPlayInfo_SE2.status & MUSICPLAYER_STATUS_TRACK))
@@ -624,7 +621,6 @@ bool8 IsSEPlaying(void)
 
 bool8 IsBGMPlaying(void)
 {
-    if (gHostNoAudio) return FALSE;
     if (gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_PAUSE)
         return FALSE;
     if (!(gMPlayInfo_BGM.status & MUSICPLAYER_STATUS_TRACK))
